@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: anomalyze-frontend
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - anomalyze-net
+
+networks:
+  anomalyze-net:
+    driver: bridge

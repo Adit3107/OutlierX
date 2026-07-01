@@ -1,6 +1,7 @@
 import type {
   ACTIVITY_ENTITIES,
   ALERT_SEVERITIES,
+  ALERT_STATUSES,
   API_KEY_STATUSES,
   CONDITION_OPERATORS,
   DECISION_RECOMMENDATIONS,
@@ -25,6 +26,7 @@ export type SubscriptionPlan = (typeof SUBSCRIPTION_PLANS)[keyof typeof SUBSCRIP
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[keyof typeof SUBSCRIPTION_STATUSES];
 export type ApiKeyStatus = (typeof API_KEY_STATUSES)[keyof typeof API_KEY_STATUSES];
 export type AlertSeverity = (typeof ALERT_SEVERITIES)[keyof typeof ALERT_SEVERITIES];
+export type AlertStatus = (typeof ALERT_STATUSES)[keyof typeof ALERT_STATUSES];
 export type ActivityEntity = (typeof ACTIVITY_ENTITIES)[keyof typeof ACTIVITY_ENTITIES];
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export type UploadStatus = (typeof UPLOAD_STATUSES)[keyof typeof UPLOAD_STATUSES];
@@ -96,12 +98,100 @@ export interface Alert {
   id: string;
   organizationId: string;
   userId?: string | null;
+  decisionId?: string | null;
+  transactionId?: string | null;
+  assignedAnalystId?: string | null;
   severity: AlertSeverity;
   title: string;
   description?: string | null;
+  riskScore?: number | null;
+  confidence?: number | null;
+  triggeredRules?: RuleResult[] | null;
+  recommendation?: DecisionRecommendation | null;
+  status: AlertStatus;
   isRead: boolean;
+  resolvedAt?: ApiDate | null;
+  archivedAt?: ApiDate | null;
+  deletedAt?: ApiDate | null;
   createdAt: ApiDate;
   updatedAt: ApiDate;
+  transaction?: Pick<Transaction, 'id' | 'transactionId' | 'merchant' | 'amount' | 'currency' | 'country' | 'paymentMethod' | 'timestamp'> | null;
+  decision?: Decision | null;
+  assignedAnalyst?: Pick<User, 'id' | 'email' | 'firstName' | 'lastName' | 'avatar'> | null;
+}
+
+export interface AlertDetail extends Alert {
+  activity: ActivityLog[];
+}
+
+export interface DashboardSummary {
+  totalTransactions: number;
+  totalUploads: number;
+  totalOrganizations: number;
+  criticalAlerts: number;
+  highAlerts: number;
+  mediumAlerts: number;
+  lowAlerts: number;
+  averageRiskScore: number;
+  averageMlConfidence: number;
+  detectionRate: number;
+  falsePositivePlaceholder: number;
+  averageProcessingTime: number;
+  activeRules: number;
+  modelVersion: string;
+  latestUpload: Upload | null;
+}
+
+export interface ChartDatum {
+  name: string;
+  value: number;
+  label?: string;
+  severity?: AlertSeverity | RiskLevel;
+  extra?: Record<string, unknown>;
+}
+
+export interface TimeSeriesDatum {
+  date: string;
+  value: number;
+  label?: string;
+}
+
+export interface HeatMapDatum {
+  day: string;
+  hour: number;
+  value: number;
+}
+
+export interface DashboardCharts {
+  riskDistribution: ChartDatum[];
+  riskTrend: TimeSeriesDatum[];
+  dailyTransactionVolume: TimeSeriesDatum[];
+  transactionsByCountry: ChartDatum[];
+  transactionsByMerchant: ChartDatum[];
+  paymentMethodDistribution: ChartDatum[];
+  currencyDistribution: ChartDatum[];
+  topRiskyMerchants: ChartDatum[];
+  topRiskyCountries: ChartDatum[];
+  hourlyTransactionHeatmap: HeatMapDatum[];
+  ruleTriggerFrequency: ChartDatum[];
+  modelPredictionDistribution: ChartDatum[];
+  recentUploadTrend: TimeSeriesDatum[];
+  recentAlertTrend: TimeSeriesDatum[];
+}
+
+export interface DashboardActivity {
+  recentUploads: Upload[];
+  recentDecisions: Decision[];
+  recentAlerts: Alert[];
+  recentRuleExecutions: RuleExecution[];
+  recentOrganizations: Organization[];
+  recentLogins: ActivityLog[];
+}
+
+export interface AnalyticsPayload {
+  summary: DashboardSummary;
+  charts: DashboardCharts;
+  activity: DashboardActivity;
 }
 
 export interface ActivityLog {

@@ -12,6 +12,11 @@ import { TransactionController, UploadController } from '../controllers/transact
 import { PredictionController } from '../controllers/prediction.controller.js';
 import { RuleController } from '../modules/rules/controllers/rule.controller.js';
 import { DecisionController } from '../modules/decision-engine/controllers/decision.controller.js';
+import { AlertController } from '../modules/alerts/controllers/alert.controller.js';
+import {
+  AnalyticsController,
+  DashboardController,
+} from '../modules/dashboard/controllers/dashboard.controller.js';
 import { requireAuth, requirePermission } from '../middlewares/auth.middleware.js';
 import { uploadCsvMiddleware } from '../middlewares/upload.middleware.js';
 import { validateBody, validateParams, validateQuery } from '../middlewares/validation.middleware.js';
@@ -25,6 +30,9 @@ import {
   paginationQueryValidator,
   transactionQueryValidator,
   uploadQueryValidator,
+  alertBulkActionValidator,
+  alertQueryValidator,
+  alertUpdateValidator,
 } from '../validators/foundation.validator.js';
 import {
   ActivityRepository,
@@ -77,6 +85,11 @@ import { ExecutionRecorder } from '../modules/rules/services/execution-recorder.
 import { RuleService } from '../modules/rules/services/rule.service.js';
 import { DecisionRepository } from '../modules/decision-engine/repositories/decision.repository.js';
 import { DecisionService } from '../modules/decision-engine/services/decision.service.js';
+import { AlertRepository } from '../modules/alerts/repositories/alert.repository.js';
+import { AlertService } from '../modules/alerts/services/alert.service.js';
+import { DashboardRepository } from '../modules/dashboard/repositories/dashboard.repository.js';
+import { DashboardService } from '../modules/dashboard/services/dashboard.service.js';
+import { AnalyticsService } from '../modules/dashboard/services/analytics.service.js';
 
 const apiRouter = Router();
 
@@ -108,7 +121,24 @@ const ruleService = new RuleService(
   new ExecutionRecorder(ruleRepository),
   activityService
 );
-const decisionService = new DecisionService(new DecisionRepository(), activityService);
+const alertRepository = new AlertRepository();
+const alertService = new AlertService(alertRepository, activityService);
+const decisionService = new DecisionService(
+  new DecisionRepository(),
+  activityService,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  undefined,
+  alertService
+);
+const dashboardService = new DashboardService(
+  new DashboardRepository(),
+  alertRepository,
+  activityService
+);
+const analyticsService = new AnalyticsService(dashboardService, activityService);
 const transactionPersistenceService = new TransactionPersistenceService(transactionRepository);
 const csvParserService = new CsvParserService(
   new CsvValidationService(),
@@ -133,6 +163,9 @@ const transactionController = new TransactionController(
 const predictionController = new PredictionController(predictionService);
 const ruleController = new RuleController(ruleService);
 const decisionController = new DecisionController(decisionService);
+const alertController = new AlertController(alertService);
+const dashboardController = new DashboardController(dashboardService);
+const analyticsController = new AnalyticsController(analyticsService);
 
 apiRouter.get('/health', healthController.getHealth);
 apiRouter.get('/status', healthController.getStatus);
@@ -141,6 +174,52 @@ apiRouter.get('/version', healthController.getVersion);
 apiRouter.use(requireAuth);
 
 apiRouter.get('/auth/me', authController.me);
+
+apiRouter.get(
+  '/dashboard/summary',
+  requirePermission(PERMISSIONS.DASHBOARD_READ),
+  dashboardController.summary
+);
+apiRouter.get(
+  '/dashboard/charts',
+  requirePermission(PERMISSIONS.DASHBOARD_READ),
+  dashboardController.charts
+);
+apiRouter.get(
+  '/dashboard/activity',
+  requirePermission(PERMISSIONS.DASHBOARD_READ),
+  dashboardController.activity
+);
+apiRouter.get(
+  '/analytics',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  analyticsController.get
+);
+apiRouter.get(
+  '/alerts',
+  requirePermission(PERMISSIONS.ALERTS_READ),
+  validateQuery(alertQueryValidator),
+  alertController.list
+);
+apiRouter.post(
+  '/alerts/bulk',
+  requirePermission(PERMISSIONS.ALERTS_UPDATE),
+  validateBody(alertBulkActionValidator),
+  alertController.bulk
+);
+apiRouter.get(
+  '/alerts/:id',
+  requirePermission(PERMISSIONS.ALERTS_READ),
+  validateParams(idParamsValidator),
+  alertController.getById
+);
+apiRouter.patch(
+  '/alerts/:id',
+  requirePermission(PERMISSIONS.ALERTS_UPDATE),
+  validateParams(idParamsValidator),
+  validateBody(alertUpdateValidator),
+  alertController.update
+);
 
 apiRouter.get(
   '/organization',

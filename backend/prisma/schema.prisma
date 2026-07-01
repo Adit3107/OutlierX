@@ -70,6 +70,12 @@ enum AlertSeverity {
   CRITICAL
 }
 
+enum AlertStatus {
+  OPEN
+  RESOLVED
+  ARCHIVED
+}
+
 enum RuleCategory {
   AMOUNT
   LOCATION
@@ -151,6 +157,7 @@ model User {
   uploads             Upload[]
   apiKeys             ApiKey[]
   alerts              Alert[]
+  assignedAlerts      Alert[] @relation("AssignedAnalyst")
   activityLogs        ActivityLog[]
   createdRules        Rule[]
 
@@ -294,6 +301,7 @@ model Transaction {
   ruleExecutions RuleExecution[]
   mlPrediction MlPrediction?
   decisions Decision[]
+  alerts Alert[]
 
   @@index([organizationId])
   @@index([transactionId])
@@ -473,6 +481,7 @@ model Decision {
   transaction   Transaction    @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   ruleExecution RuleExecution? @relation(fields: [ruleExecutionId], references: [id], onDelete: SetNull)
   mlPrediction  MlPrediction?  @relation(fields: [mlPredictionId], references: [id], onDelete: SetNull)
+  alerts        Alert[]
 
   @@index([organizationId])
   @@index([transactionId])
@@ -488,25 +497,46 @@ model Decision {
 }
 
 model Alert {
-  id             String        @id @default(uuid())
-  organizationId String
-  userId         String?
-  severity       AlertSeverity
-  title          String
-  description    String?
-  isRead         Boolean       @default(false)
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id                String                 @id @default(uuid())
+  organizationId    String
+  userId            String?
+  decisionId        String?                @unique
+  transactionId     String?
+  assignedAnalystId String?
+  severity          AlertSeverity
+  title             String
+  description       String?
+  riskScore         Float?
+  confidence        Float?
+  triggeredRules    Json?
+  recommendation    DecisionRecommendation?
+  status            AlertStatus            @default(OPEN)
+  isRead            Boolean                @default(false)
+  resolvedAt        DateTime?
+  archivedAt        DateTime?
+  deletedAt         DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
 
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  decision        Decision?    @relation(fields: [decisionId], references: [id], onDelete: SetNull)
+  transaction     Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+  assignedAnalyst User?        @relation("AssignedAnalyst", fields: [assignedAnalystId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
   @@index([userId])
+  @@index([decisionId])
+  @@index([transactionId])
+  @@index([assignedAnalystId])
   @@index([severity])
+  @@index([status])
   @@index([isRead])
   @@index([createdAt])
+  @@index([deletedAt])
   @@index([organizationId, severity])
+  @@index([organizationId, status, severity])
+  @@index([organizationId, isRead, createdAt])
 }
 
 model ActivityLog {

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   API_KEY_STATUSES,
+  ALERT_STATUSES,
   DECISION_RECOMMENDATIONS,
   DECISION_STRATEGIES,
   MEMBERSHIP_STATUSES,
@@ -14,6 +15,7 @@ import {
 
 const ruleCategoryValues = ['AMOUNT', 'LOCATION', 'MERCHANT', 'TIME', 'ACCOUNT', 'DEVICE', 'CUSTOM'] as const;
 const alertSeverityValues = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
+const alertStatusValues = Object.values(ALERT_STATUSES) as [string, ...string[]];
 const conditionOperatorValues = [
   'EQ',
   'NEQ',
@@ -270,4 +272,33 @@ export const ApiKeyQuerySchema = z.object({
 export const PaginationQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
+});
+
+export const AlertQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  search: z.string().trim().max(160).optional(),
+  severity: z.enum(alertSeverityValues).optional(),
+  status: z.enum(alertStatusValues).optional(),
+  isRead: z.coerce.boolean().optional(),
+  recommendation: z.enum(decisionRecommendationValues).optional(),
+  assigned: z.enum(['assigned', 'unassigned']).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+}).refine((value) => !value.startDate || !value.endDate || new Date(value.startDate) <= new Date(value.endDate), {
+  message: 'Start date must be before end date',
+  path: ['startDate'],
+});
+
+export const AlertUpdateSchema = z.object({
+  isRead: z.boolean().optional(),
+  status: z.enum(alertStatusValues).optional(),
+  assignedAnalystId: z.string().uuid().nullable().optional(),
+}).refine((value) => Object.keys(value).length > 0, {
+  message: 'At least one alert field must be provided',
+});
+
+export const AlertBulkActionSchema = z.object({
+  ids: z.array(z.string().uuid()).min(1).max(500),
+  action: z.enum(['MARK_READ', 'MARK_UNREAD', 'RESOLVE', 'REOPEN', 'ARCHIVE', 'DELETE']),
 });

@@ -174,6 +174,38 @@ Frontend:
 - Transaction details show a Decision Summary card with final risk level, score, confidence, recommendation, strategy, decision time, triggered rules, ML analysis, explanation, timeline, and collapsible calculation details.
 - Severity colors are reserved for risk-specific surfaces: decision badges, borders, banners, timeline markers, tables, and charts.
 
+## Analytics, Monitoring, and Alert Center
+
+The operational console turns stored decisions and transaction history into analyst-facing monitoring views. Dashboard, analytics, and alert APIs consume existing records only; they do not rerun the Rule Engine and do not call ML inference.
+
+Backend architecture:
+
+- Dashboard endpoints are `GET /api/v1/dashboard/summary`, `GET /api/v1/dashboard/charts`, and `GET /api/v1/dashboard/activity`.
+- Alert Center endpoints are `GET /api/v1/alerts`, `GET /api/v1/alerts/:id`, `PATCH /api/v1/alerts/:id`, and `POST /api/v1/alerts/bulk`.
+- Analytics is exposed through `GET /api/v1/analytics`, combining dashboard summary, chart data, and recent activity.
+- `DashboardService`, `AnalyticsService`, `AlertService`, `MetricsCalculator`, `ChartBuilder`, and repository classes keep aggregation and lifecycle logic out of controllers.
+- A `CacheProvider` abstraction is present with a no-op implementation, so Redis can later be introduced without changing controller or frontend contracts.
+
+Alert lifecycle:
+
+1. A stored Decision Engine result creates an alert.
+2. Severity maps directly from decision risk level: `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL`.
+3. The alert stores transaction linkage, risk score, confidence, triggered rules, recommendation, status, read state, and optional analyst assignment.
+4. Analysts can mark read/unread, resolve, reopen, archive, and soft-delete alerts individually or in bulk.
+5. Activity logs record alert creation, update, resolution, archive, delete, dashboard access, and analytics access.
+
+Dashboard metrics and charts:
+
+- Summary cards include transaction, upload, organization, alert severity, average risk, ML confidence, detection rate, false-positive placeholder, processing time, active rules, model version, and latest upload.
+- Chart payloads include risk distribution, risk trend, transaction volume, country and merchant analysis, payment and currency distribution, risky merchants/countries, hourly heatmap, rule triggers, model predictions, upload trend, and alert trend.
+- The frontend uses Recharts with responsive containers, tooltips, legends, hover states, dark mode tokens, and accessible surrounding tables/labels.
+
+Realtime strategy:
+
+- The frontend currently polls dashboard, analytics, and alert queries every 30 seconds through `frontend/hooks/use-dashboard-polling.ts`.
+- Polling is isolated so Kafka or another event stream can replace it later without rewriting the dashboard widgets.
+- Pulse Rail accepts anomaly events as props and currently falls back to mock events when no stream is connected.
+
 ## Machine Learning Service
 
 The ML service is an independent FastAPI app under `ml-service`. It does not import Express code, access the database, call the rule engine, trigger alerts, or produce final risk levels. Its only responsibility is returning model predictions.

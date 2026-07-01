@@ -1,6 +1,9 @@
 import {
   ApiKeyCreateSchema,
   ApiKeyQuerySchema,
+  AlertBulkActionSchema,
+  AlertQuerySchema,
+  AlertUpdateSchema,
   MemberCreateSchema,
   MemberUpdateSchema,
   OrganizationUpdateSchema,
@@ -22,3 +25,6 @@ export const apiKeyQueryValidator = ApiKeyQuerySchema;
 export const paginationQueryValidator = PaginationQuerySchema;
 export const uploadQueryValidator = UploadQuerySchema;
 export const transactionQueryValidator = QueryTransactionsSchema;
+export const alertQueryValidator = AlertQuerySchema;
+export const alertUpdateValidator = AlertUpdateSchema;
+export const alertBulkActionValidator = AlertBulkActionSchema;

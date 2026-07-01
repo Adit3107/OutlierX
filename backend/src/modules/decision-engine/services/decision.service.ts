@@ -15,6 +15,7 @@ import { RecommendationGenerator } from '../calculators/recommendation.generator
 import { toDecisionDto } from '../dto/decision.dto.js';
 import { ExplanationGenerator } from '../explanations/explanation.generator.js';
 import { DecisionFilters, DecisionRepository } from '../repositories/decision.repository.js';
+import { AlertService } from '../../alerts/services/alert.service.js';
 import { WeightStrategy } from '../strategies/weight.strategy.js';
 import type {
   DecisionCalculationInput,
@@ -33,7 +34,8 @@ export class DecisionService {
     private decisionCalculator = new DecisionCalculator(decisionEngineConfig),
     private confidenceCalculator = new ConfidenceCalculator(),
     private explanationGenerator = new ExplanationGenerator(decisionEngineConfig),
-    private recommendationGenerator = new RecommendationGenerator(decisionEngineConfig)
+    private recommendationGenerator = new RecommendationGenerator(decisionEngineConfig),
+    private alertService?: AlertService
   ) {}
 
   async listDecisions(
@@ -126,6 +128,10 @@ export class DecisionService {
           previousDecision: inputs.previousDecision,
           decision: created,
         });
+
+        if (this.alertService) {
+          await this.alertService.createFromDecision(created, userId);
+        }
 
         results.push({
           transactionId,

@@ -58,6 +58,12 @@ export const ALERT_SEVERITIES = {
   CRITICAL: 'CRITICAL',
 } as const;
 
+export const ALERT_STATUSES = {
+  OPEN: 'OPEN',
+  RESOLVED: 'RESOLVED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
 export const RULE_CATEGORIES = {
   AMOUNT: 'AMOUNT',
   LOCATION: 'LOCATION',
@@ -150,6 +156,11 @@ export const PERMISSIONS = {
   RULES_DELETE: 'rules:delete',
   RULES_EVALUATE: 'rules:evaluate',
   ACTIVITY_READ: 'activity:read',
+  DASHBOARD_READ: 'dashboard:read',
+  ANALYTICS_READ: 'analytics:read',
+  ALERTS_READ: 'alerts:read',
+  ALERTS_UPDATE: 'alerts:update',
+  ALERTS_DELETE: 'alerts:delete',
 } as const;
 
 export const RULE_TYPES = {

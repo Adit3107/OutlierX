@@ -8,7 +8,9 @@ import {
   MemberController,
   OrganizationController,
 } from '../controllers/foundation.controller.js';
+import { TransactionController, UploadController } from '../controllers/transaction.controller.js';
 import { requireAuth, requirePermission } from '../middlewares/auth.middleware.js';
+import { uploadCsvMiddleware } from '../middlewares/upload.middleware.js';
 import { validateBody, validateParams, validateQuery } from '../middlewares/validation.middleware.js';
 import {
   apiKeyCreateValidator,
@@ -18,6 +20,8 @@ import {
   memberUpdateValidator,
   organizationUpdateValidator,
   paginationQueryValidator,
+  transactionQueryValidator,
+  uploadQueryValidator,
 } from '../validators/foundation.validator.js';
 import {
   ActivityRepository,
@@ -31,6 +35,17 @@ import {
   MemberService,
   OrganizationService,
 } from '../services/foundation.service.js';
+import {
+  TransactionRepository,
+  UploadRepository,
+} from '../repositories/transaction.repository.js';
+import {
+  CsvParserService,
+  CsvValidationService,
+  TransactionPersistenceService,
+} from '../services/csv-ingestion.service.js';
+import { TransactionService, UploadService } from '../services/transaction.service.js';
+import { createStorageProvider } from '../services/storage.service.js';
 
 const apiRouter = Router();
 
@@ -48,6 +63,20 @@ const apiKeyController = new ApiKeyController(
   new ApiKeyService(new ApiKeyRepository(), activityService)
 );
 const activityController = new ActivityController(activityService);
+const uploadRepository = new UploadRepository();
+const transactionRepository = new TransactionRepository();
+const transactionPersistenceService = new TransactionPersistenceService(transactionRepository);
+const csvParserService = new CsvParserService(
+  new CsvValidationService(),
+  transactionPersistenceService
+);
+const storageProvider = createStorageProvider();
+const uploadController = new UploadController(
+  new UploadService(uploadRepository, csvParserService, storageProvider, activityService)
+);
+const transactionController = new TransactionController(
+  new TransactionService(transactionRepository, uploadRepository)
+);
 
 apiRouter.get('/health', healthController.getHealth);
 apiRouter.get('/status', healthController.getStatus);
@@ -114,6 +143,38 @@ apiRouter.get(
   requirePermission(PERMISSIONS.ACTIVITY_READ),
   validateQuery(paginationQueryValidator),
   activityController.list
+);
+
+apiRouter.post(
+  '/uploads',
+  requirePermission(PERMISSIONS.UPLOADS_CREATE),
+  uploadCsvMiddleware,
+  uploadController.create
+);
+apiRouter.get(
+  '/uploads',
+  requirePermission(PERMISSIONS.UPLOADS_READ),
+  validateQuery(uploadQueryValidator),
+  uploadController.list
+);
+apiRouter.get(
+  '/uploads/:id',
+  requirePermission(PERMISSIONS.UPLOADS_READ),
+  validateParams(idParamsValidator),
+  uploadController.getById
+);
+apiRouter.delete(
+  '/uploads/:id',
+  requirePermission(PERMISSIONS.UPLOADS_DELETE),
+  validateParams(idParamsValidator),
+  uploadController.delete
+);
+apiRouter.get(
+  '/uploads/:id/transactions',
+  requirePermission(PERMISSIONS.TRANSACTIONS_READ),
+  validateParams(idParamsValidator),
+  validateQuery(transactionQueryValidator),
+  transactionController.listByUpload
 );
 
 export default apiRouter;

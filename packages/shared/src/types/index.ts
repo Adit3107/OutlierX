@@ -8,6 +8,7 @@ import type {
   SUBSCRIPTION_STATUSES,
   USER_ROLES,
   USER_STATUSES,
+  UPLOAD_STATUSES,
 } from '../constants/index.js';
 
 export type UserStatus = (typeof USER_STATUSES)[keyof typeof USER_STATUSES];
@@ -19,6 +20,7 @@ export type ApiKeyStatus = (typeof API_KEY_STATUSES)[keyof typeof API_KEY_STATUS
 export type AlertSeverity = (typeof ALERT_SEVERITIES)[keyof typeof ALERT_SEVERITIES];
 export type ActivityEntity = (typeof ACTIVITY_ENTITIES)[keyof typeof ACTIVITY_ENTITIES];
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+export type UploadStatus = (typeof UPLOAD_STATUSES)[keyof typeof UPLOAD_STATUSES];
 export type ApiDate = string | Date;
 
 export interface User {
@@ -109,19 +111,59 @@ export interface AuthContext {
 export interface Transaction {
   id: string;
   organizationId: string;
+  uploadId: string;
+  transactionId: string;
+  timestamp: ApiDate;
   amount: number;
   currency: string;
   merchant: string;
-  category: string;
-  timestamp: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'FLAGGED';
-  description?: string;
-  anomalous: boolean;
-  anomalyScore?: number;
-  anomalyReason?: string;
-  metadata?: Record<string, unknown>;
-  createdAt: string;
-  updatedAt: string;
+  merchantCategory?: string | null;
+  accountNumber?: string | null;
+  country?: string | null;
+  city?: string | null;
+  paymentMethod?: string | null;
+  description?: string | null;
+  referenceNumber?: string | null;
+  customerId?: string | null;
+  status: 'IMPORTED';
+  metadata?: Record<string, unknown> | null;
+  createdAt: ApiDate;
+  updatedAt: ApiDate;
+}
+
+export interface UploadRowError {
+  row: number;
+  transactionId?: string | null;
+  errors: string[];
+}
+
+export interface UploadSummary {
+  totalRows: number;
+  processedRows: number;
+  failedRows: number;
+  processingTime: number;
+  errors: UploadRowError[];
+}
+
+export interface Upload {
+  id: string;
+  organizationId: string;
+  uploadedById: string;
+  filename: string;
+  originalFilename: string;
+  storageKey: string;
+  storageUrl: string;
+  mimeType: string;
+  fileSize: number;
+  fileHash: string;
+  status: UploadStatus;
+  totalRows: number;
+  processedRows: number;
+  failedRows: number;
+  processingTime?: number | null;
+  errorSummary?: UploadRowError[] | null;
+  createdAt: ApiDate;
+  updatedAt: ApiDate;
 }
 
 export interface DetectionRule {

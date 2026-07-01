@@ -28,6 +28,7 @@ const environmentSchema = z.object({
   JWT_SECRET: z.string().min(1).optional(),
   STORAGE_PROVIDER: z.string().default('dummy'),
   STORAGE_BUCKET: z.string().default('dummy'),
+  STORAGE_LOCAL_ROOT: z.string().default('uploads'),
   EMAIL_PROVIDER: z.string().default('dummy'),
   EMAIL_API_KEY: z.string().default('dummy'),
 });
@@ -66,6 +67,8 @@ export const config = {
   storage: {
     provider: parsedConfig.data.STORAGE_PROVIDER,
     bucket: parsedConfig.data.STORAGE_BUCKET,
+    localRoot: parsedConfig.data.STORAGE_LOCAL_ROOT,
+    maxUploadBytes: 100 * 1024 * 1024,
   },
   email: {
     provider: parsedConfig.data.EMAIL_PROVIDER,

@@ -50,6 +50,9 @@ enum ApiKeyStatus {
 enum UploadStatus {
   UPLOADING
   UPLOADED
+  PARSING
+  PROCESSING
+  COMPLETED
   FAILED
 }
 
@@ -119,6 +122,7 @@ model Organization {
   currentUsers User[]        @relation("CurrentOrganization")
   memberships  Membership[]
   uploads      Upload[]
+  transactions Transaction[]
   apiKeys      ApiKey[]
   alerts       Alert[]
   activityLogs ActivityLog[]
@@ -173,28 +177,69 @@ model ApiKey {
 }
 
 model Upload {
-  id               String           @id @default(uuid())
+  id               String       @id @default(uuid())
   organizationId   String
-  uploadedById     String           @map("uploadedBy")
+  uploadedById     String       @map("uploadedBy")
   filename         String
+  originalFilename String
+  storageKey       String
   storageUrl       String
-  status           UploadStatus     @default(UPLOADING)
-  processingStatus ProcessingStatus @default(PENDING)
-  totalRecords     Int              @default(0)
-  processedRecords Int              @default(0)
-  failedRecords    Int              @default(0)
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  mimeType         String
+  fileSize         Int
+  fileHash         String
+  status           UploadStatus @default(UPLOADING)
+  totalRows        Int          @default(0)
+  processedRows    Int          @default(0)
+  failedRows       Int          @default(0)
+  processingTime   Int?
+  errorSummary     Json?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   uploadedBy   User         @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  transactions Transaction[]
 
+  @@unique([organizationId, fileHash])
   @@index([organizationId])
   @@index([uploadedById])
   @@index([status])
-  @@index([processingStatus])
   @@index([createdAt])
   @@index([organizationId, status])
+}
+
+model Transaction {
+  id               String   @id @default(uuid())
+  organizationId   String
+  uploadId         String
+  transactionId    String
+  timestamp        DateTime
+  amount           Decimal  @db.Decimal(18, 2)
+  currency         String
+  merchant         String
+  merchantCategory String?
+  accountNumber    String?
+  country          String?
+  city             String?
+  paymentMethod    String?
+  description      String?
+  referenceNumber  String?
+  customerId       String?
+  status           String   @default("IMPORTED")
+  metadata         Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  upload       Upload       @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([transactionId])
+  @@index([timestamp])
+  @@index([merchant])
+  @@index([country])
+  @@index([amount])
+  @@index([uploadId])
 }
 
 model Alert {

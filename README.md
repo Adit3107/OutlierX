@@ -20,7 +20,8 @@ Core models:
 - `Organization`: tenant record with slug, subscription fields, max users, memberships, uploads, API keys, alerts, activity logs.
 - `Membership`: connects users to organizations with role and membership status.
 - `ApiKey`: organization-scoped API keys storing only hashed key material.
-- `Upload`: future upload tracking foundation without active upload endpoints in this phase.
+- `Upload`: organization-scoped CSV upload tracking with file hash, storage key, lifecycle status, row counts, processing time, and bounded validation error summary.
+- `Transaction`: normalized transaction rows imported from CSV uploads. Rows are scoped by organization and upload, indexed by transaction ID, timestamp, merchant, country, amount, and upload ID.
 - `Alert`: organization/user alert foundation.
 - `ActivityLog`: organization-scoped audit trail with JSON metadata.
 
@@ -30,9 +31,40 @@ Important enums:
 - `Role`: `OWNER`, `ADMIN`, `ANALYST`, `MEMBER`, `VIEWER`
 - `SubscriptionPlan`: `FREE`, `PRO`, `ENTERPRISE`
 - `SubscriptionStatus`: `ACTIVE`, `TRIAL`, `PAST_DUE`, `CANCELLED`
-- `UploadStatus`: `UPLOADING`, `UPLOADED`, `FAILED`
+- `UploadStatus`: `UPLOADING`, `UPLOADED`, `PARSING`, `PROCESSING`, `COMPLETED`, `FAILED`
 - `ProcessingStatus`: `PENDING`, `PROCESSING`, `COMPLETED`, `FAILED`
 - `AlertSeverity`: `LOW`, `MEDIUM`, `HIGH`, `CRITICAL`
+
+## Data Ingestion
+
+The ingestion module accepts CSV transaction files only. The backend stores the original file through a storage abstraction, creates an upload record, parses the CSV with a streaming parser, validates each row independently, persists valid transactions in batches, updates upload summary counters, and records activity logs.
+
+No anomaly detection, risk scoring, ML calls, Kafka, Redis, or rule engine behavior is part of this module.
+
+CSV limits and validation:
+
+- Maximum file size: `100 MB`
+- Accepted extension: `.csv`
+- Required columns: `transaction_id`, `timestamp`, `amount`, `currency`, `merchant`
+- Optional columns: `merchant_category`, `account_number`, `country`, `city`, `payment_method`, `description`, `reference_number`, `customer_id`
+- Invalid rows are collected in the upload error summary while valid rows continue processing.
+- Missing transaction ID, timestamp, merchant, invalid amount, invalid currency, invalid date, and negative amounts reject only that row.
+
+Normalization:
+
+- String values are trimmed.
+- Duplicate whitespace is collapsed.
+- Currency codes are uppercased.
+- Timestamps are persisted as PostgreSQL timestamps.
+- Optional missing values are stored as `NULL`.
+
+Storage:
+
+- The backend uses a `StorageProvider` interface with `upload`, `delete`, and `getUrl`.
+- Local storage is enabled by default and writes under `uploads/{organizationId}/`.
+- Cloud storage stubs are present but disabled.
+- API responses expose storage keys/URLs, never absolute server file paths.
+- Duplicate uploads are prevented per organization by SHA-256 file hash.
 
 ## Authentication Flow
 
@@ -78,6 +110,11 @@ Authenticated:
 - `POST /api-keys`
 - `DELETE /api-keys/:id`
 - `GET /activity`
+- `POST /uploads`
+- `GET /uploads`
+- `GET /uploads/:id`
+- `DELETE /uploads/:id`
+- `GET /uploads/:id/transactions`
 
 API responses use a standard shape:
 
@@ -154,5 +191,7 @@ The project uses the existing root `.env` values:
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
 - `NEXT_PUBLIC_API_URL`
 - `ML_SERVICE_URL`
+- `STORAGE_PROVIDER` optional, defaults to local-compatible `dummy`
+- `STORAGE_LOCAL_ROOT` optional, defaults to `uploads`
 
 Do not commit real credentials.

@@ -81,7 +81,6 @@ venv.bak/
 Thumbs.db
 
 # Database / Prisma
-/backend/prisma/migrations/
 /backend/prisma/db.sqlite
 /backend/prisma/db.sqlite-journal
 

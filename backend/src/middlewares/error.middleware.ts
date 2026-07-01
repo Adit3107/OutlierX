@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import multer from 'multer';
 import { ApiError } from '../utils/errors.js';
 import { sendError } from '../utils/response.js';
 import { logger } from '../lib/logger.js';
@@ -22,6 +23,18 @@ export function errorHandler(
       details: err.details,
     });
     sendError(res, err.message, err.errorCode, err.statusCode, err.details);
+    return;
+  }
+
+  if (err instanceof multer.MulterError) {
+    const message =
+      err.code === 'LIMIT_FILE_SIZE'
+        ? 'CSV upload must be 100 MB or smaller'
+        : 'Invalid upload request';
+    logger.warn(`Upload Error: ${message} | URL: ${req.originalUrl}`, {
+      code: err.code,
+    });
+    sendError(res, message, ERROR_CODES.BAD_REQUEST, 400, { code: err.code });
     return;
   }
 

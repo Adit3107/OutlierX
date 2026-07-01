@@ -1,0 +1,16 @@
+// Prisma schema file to initialize connection to Neon PostgreSQL
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Initial placeholder model to allow Prisma Client generation to compile.
+model SchemaInit {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+}

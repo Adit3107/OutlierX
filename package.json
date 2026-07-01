@@ -1,0 +1,33 @@
+{
+  "name": "anomaly-detection-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "frontend",
+    "backend",
+    "ml-service"
+  ],
+  "scripts": {
+    "dev": "concurrently -n \"shared,backend,frontend,ml\" -c \"cyan,blue,green,magenta\" \"npm run dev -w @anomaly/shared\" \"npm run dev -w @anomaly/backend\" \"npm run dev -w @anomaly/frontend\" \"npm run dev -w @anomaly/ml-service\"",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md,yaml,yml}\"",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present && rimraf node_modules",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.3.0",
+    "@commitlint/config-conventional": "^19.2.2",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.7",
+    "prettier": "^3.3.2",
+    "rimraf": "^5.0.7",
+    "typescript": "^5.4.5"
+  }
+}

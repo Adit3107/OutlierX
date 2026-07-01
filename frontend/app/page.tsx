@@ -1,103 +1,70 @@
 'use client';
 
 import React from 'react';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
-import { Loader2, ShieldCheck } from 'lucide-react';
+import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
+import { ShieldCheck } from 'lucide-react';
+import { OperatorConsole } from '../components/operator-console';
 import { useAuthData } from '../providers/auth-provider';
 
-function ProtectedFoundation() {
-  const { auth, isLoading, error } = useAuthData();
+function SignedInConsole() {
+  const { auth } = useAuthData();
 
+  return <OperatorConsole auth={auth} />;
+}
+
+function SignedOutConsole() {
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border px-6 py-4">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Anomalyze</p>
-              <p className="text-xs text-muted-foreground">Foundation workspace</p>
-            </div>
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
+      <section className="w-full max-w-sm rounded-md border border-border bg-surface p-5">
+        <div className="flex items-center gap-3 border-b border-border pb-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-md border border-primary/40 bg-surface-alt text-primary">
+            <ShieldCheck className="h-5 w-5" />
           </div>
-          <UserButton afterSignOutUrl="/" />
-        </div>
-      </header>
-
-      <section className="mx-auto grid max-w-5xl gap-6 px-6 py-10 md:grid-cols-[1fr_280px]">
-        <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-normal">Backend foundation is protected</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Authentication, organization context, RBAC, API keys, members, and activity logs are ready for future product modules.
-            </p>
+            <h1 className="font-display text-2xl font-semibold leading-none">Anomalyze</h1>
+            <p className="mt-1 font-mono text-xs uppercase text-muted-foreground">Fraud analysis console</p>
           </div>
-
-          {isLoading ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Loading secure workspace
-            </div>
-          ) : error ? (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive-foreground">
-              Unable to load authenticated workspace.
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-md border border-border p-4">
-                <p className="text-xs font-medium uppercase text-muted-foreground">Current user</p>
-                <p className="mt-2 text-sm font-semibold">{auth?.user.email}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {[auth?.user.firstName, auth?.user.lastName].filter(Boolean).join(' ') || 'Profile synced from Clerk'}
-                </p>
-              </div>
-              <div className="rounded-md border border-border p-4">
-                <p className="text-xs font-medium uppercase text-muted-foreground">Organization</p>
-                <p className="mt-2 text-sm font-semibold">{auth?.organization.name}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{auth?.organization.slug}</p>
-              </div>
-            </div>
-          )}
         </div>
-
-        <aside className="rounded-md border border-border p-4">
-          <p className="text-xs font-medium uppercase text-muted-foreground">Access</p>
-          <p className="mt-2 text-sm font-semibold">{auth?.role ?? 'Loading'}</p>
-          <div className="mt-4 space-y-2">
-            {(auth?.permissions ?? []).slice(0, 6).map((permission) => (
-              <div key={permission} className="rounded-sm bg-muted px-2 py-1 text-xs text-muted-foreground">
-                {permission}
-              </div>
-            ))}
+        <p className="mt-4 text-sm leading-[1.4] text-muted-foreground">
+          Authenticate to access the financial anomaly monitoring workspace.
+        </p>
+        <div className="mt-4 rounded-md border border-border bg-surface-alt p-3">
+          <div className="flex items-center justify-between font-mono text-xs">
+            <span className="text-muted-foreground">SESSION</span>
+            <span className="text-severity-medium">LOCKED</span>
           </div>
-        </aside>
+        </div>
+        <SignInButton mode="modal">
+          <button className="mt-4 h-9 w-full rounded-md bg-primary-strong px-3 text-sm font-medium text-primary-foreground transition-colors duration-200 ease-out hover:bg-primary-strong/90" type="button">
+            Sign in
+          </button>
+        </SignInButton>
       </section>
     </main>
   );
 }
 
 export default function HomePage() {
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.search) {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (
+        searchParams.has('__clerk_status') ||
+        window.location.search.includes('_clerk') ||
+        window.location.search.includes('clerk')
+      ) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+
   return (
     <>
       <SignedOut>
-        <main className="flex min-h-screen items-center justify-center bg-background px-6 text-foreground">
-          <div className="w-full max-w-sm rounded-md border border-border p-6 text-center">
-            <ShieldCheck className="mx-auto h-8 w-8 text-primary" />
-            <h1 className="mt-4 text-xl font-semibold tracking-normal">Anomalyze</h1>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Sign in to initialize your secure organization workspace.
-            </p>
-            <SignInButton mode="modal">
-              <button className="mt-6 w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
-                Sign in
-              </button>
-            </SignInButton>
-          </div>
-        </main>
+        <SignedOutConsole />
       </SignedOut>
       <SignedIn>
-        <ProtectedFoundation />
+        <SignedInConsole />
       </SignedIn>
     </>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import '../styles/globals.css';
 import { ThemeProvider } from '../providers/theme-provider';
@@ -13,11 +13,22 @@ const inter = Inter({
   variable: '--font-sans',
 });
 
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-display',
+  weight: ['500', '600'],
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+});
+
 export const metadata: Metadata = {
-  title: 'Anomalyze | Enterprise Financial Anomaly Detection SaaS',
+  title: 'Anomalyze | Financial Anomaly Analysis Console',
   description:
-    'Secure, AI-powered real-time transaction monitoring and anomaly detection platform for modern organizations.',
-  keywords: ['anomaly detection', 'fraud prevention', 'financial analytics', 'SaaS', 'transaction analysis'],
+    'Financial fraud detection and anomaly analysis console for analyst operations.',
+  keywords: ['anomaly detection', 'fraud prevention', 'financial analytics', 'transaction analysis'],
   authors: [{ name: 'Anomalyze Team' }],
 };
 
@@ -34,7 +45,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className={`${inter.variable} font-sans antialiased`}>
+        <body className={`${inter.variable} ${spaceGrotesk.variable} ${jetBrainsMono.variable} font-sans antialiased`}>
           <QueryProvider>
             <AuthProvider>
               <ThemeProvider

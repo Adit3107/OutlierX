@@ -43,12 +43,29 @@ export const DetectionRuleCreateSchema = z.object({
 export const QueryTransactionsSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
-  sortBy: z.enum(['timestamp', 'amount', 'merchant', 'country', 'transactionId']).default('timestamp'),
+  sortBy: z.enum(['timestamp', 'amount', 'merchant', 'country', 'createdAt', 'transactionId']).default('timestamp'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
-  search: z.string().max(120).optional(),
+  search: z.string().trim().max(120).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
   country: z.string().max(120).optional(),
   merchant: z.string().max(255).optional(),
+  merchantCategory: z.string().max(255).optional(),
+  paymentMethod: z.string().max(120).optional(),
+  currency: z.enum(SUPPORTED_CURRENCIES as unknown as [string, ...string[]]).optional(),
+  minAmount: z.coerce.number().nonnegative().optional(),
+  maxAmount: z.coerce.number().nonnegative().optional(),
+  uploadId: z.string().uuid().optional(),
   status: z.enum(Object.values(TRANSACTION_STATUSES) as [string, ...string[]]).optional(),
+  ids: z.string().max(5000).optional(),
+  format: z.enum(['csv', 'json']).default('csv'),
+  scope: z.enum(['page', 'filtered', 'selected']).default('filtered'),
+}).refine((value) => !value.startDate || !value.endDate || new Date(value.startDate) <= new Date(value.endDate), {
+  message: 'Start date must be before end date',
+  path: ['startDate'],
+}).refine((value) => value.minAmount === undefined || value.maxAmount === undefined || value.minAmount <= value.maxAmount, {
+  message: 'Minimum amount must be less than maximum amount',
+  path: ['minAmount'],
 });
 
 export const UploadQuerySchema = z.object({

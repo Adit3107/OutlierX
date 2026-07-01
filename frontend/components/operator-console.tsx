@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { UserButton, useAuth } from '@clerk/nextjs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosProgressEvent } from 'axios';
@@ -569,9 +570,9 @@ function TransactionsTable({ uploadId, client }: { uploadId: string | null; clie
 
 function Sidebar() {
   const items = [
-    { label: 'Overview', icon: Database },
-    { label: 'Data Sources', icon: UploadCloud, active: true },
-    { label: 'Transactions', icon: WalletCards },
+    { label: 'Overview', icon: Database, href: '/' },
+    { label: 'Data Sources', icon: UploadCloud, active: true, href: '/' },
+    { label: 'Transactions', icon: WalletCards, href: '/transactions' },
   ];
 
   return (
@@ -587,7 +588,7 @@ function Sidebar() {
       </div>
       <nav className="flex-1 space-y-1 px-2 py-3">
         {items.map((item) => (
-          <button
+          <Link
             key={item.label}
             className={cn(
               'flex h-9 w-full items-center gap-2 rounded-md px-2 text-left text-sm transition-colors duration-200 ease-out',
@@ -595,11 +596,11 @@ function Sidebar() {
                 ? 'border border-border bg-surface-alt text-foreground'
                 : 'text-muted-foreground hover:bg-surface hover:text-foreground'
             )}
-            type="button"
+            href={item.href}
           >
             <item.icon className={cn('h-4 w-4', item.active && 'text-primary')} />
             <span>{item.label}</span>
-          </button>
+          </Link>
         ))}
       </nav>
       <div className="border-t border-border p-3">

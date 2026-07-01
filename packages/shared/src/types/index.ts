@@ -129,6 +129,10 @@ export interface Transaction {
   metadata?: Record<string, unknown> | null;
   createdAt: ApiDate;
   updatedAt: ApiDate;
+  upload?: Pick<Upload, 'id' | 'filename' | 'originalFilename' | 'createdAt'> & {
+    uploadedBy?: Pick<User, 'id' | 'email' | 'firstName' | 'lastName'> | null;
+    organization?: Pick<Organization, 'id' | 'name' | 'slug'> | null;
+  };
 }
 
 export interface UploadRowError {

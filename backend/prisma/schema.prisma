@@ -76,6 +76,7 @@ enum ActivityEntity {
   MEMBERSHIP
   API_KEY
   UPLOAD
+  TRANSACTION
   ALERT
   SYSTEM
 }
@@ -240,6 +241,12 @@ model Transaction {
   @@index([country])
   @@index([amount])
   @@index([uploadId])
+  @@index([organizationId, timestamp])
+  @@index([organizationId, createdAt])
+  @@index([organizationId, merchant])
+  @@index([organizationId, country])
+  @@index([organizationId, currency])
+  @@index([organizationId, status])
 }
 
 model Alert {

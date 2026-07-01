@@ -40,6 +40,11 @@ import {
   UploadRepository,
 } from '../repositories/transaction.repository.js';
 import {
+  bulkTransactionActionValidator,
+  bulkDeleteTransactionsValidator,
+  queryTransactionsValidator,
+} from '../validators/transaction.validator.js';
+import {
   CsvParserService,
   CsvValidationService,
   TransactionPersistenceService,
@@ -75,7 +80,7 @@ const uploadController = new UploadController(
   new UploadService(uploadRepository, csvParserService, storageProvider, activityService)
 );
 const transactionController = new TransactionController(
-  new TransactionService(transactionRepository, uploadRepository)
+  new TransactionService(transactionRepository, uploadRepository, activityService)
 );
 
 apiRouter.get('/health', healthController.getHealth);
@@ -169,6 +174,43 @@ apiRouter.delete(
   validateParams(idParamsValidator),
   uploadController.delete
 );
+apiRouter.get(
+  '/transactions/export',
+  requirePermission(PERMISSIONS.TRANSACTIONS_READ),
+  validateQuery(queryTransactionsValidator),
+  transactionController.export
+);
+apiRouter.get(
+  '/transactions',
+  requirePermission(PERMISSIONS.TRANSACTIONS_READ),
+  validateQuery(queryTransactionsValidator),
+  transactionController.list
+);
+apiRouter.post(
+  '/transactions/bulk-actions',
+  requirePermission(PERMISSIONS.TRANSACTIONS_READ),
+  validateBody(bulkTransactionActionValidator),
+  transactionController.bulkAction
+);
+apiRouter.get(
+  '/transactions/:id',
+  requirePermission(PERMISSIONS.TRANSACTIONS_READ),
+  validateParams(idParamsValidator),
+  transactionController.getById
+);
+apiRouter.delete(
+  '/transactions/:id',
+  requirePermission(PERMISSIONS.TRANSACTIONS_DELETE),
+  validateParams(idParamsValidator),
+  transactionController.delete
+);
+apiRouter.delete(
+  '/transactions',
+  requirePermission(PERMISSIONS.TRANSACTIONS_DELETE),
+  validateBody(bulkDeleteTransactionsValidator),
+  transactionController.deleteMany
+);
+
 apiRouter.get(
   '/uploads/:id/transactions',
   requirePermission(PERMISSIONS.TRANSACTIONS_READ),

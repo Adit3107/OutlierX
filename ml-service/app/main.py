@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import health
+from app.routers import health, prediction
 from app.config import settings
 
 app = FastAPI(
@@ -20,6 +20,7 @@ app.add_middleware(
 
 # Register routers
 app.include_router(health.router)
+app.include_router(prediction.router)
 
 @app.get("/")
 async def root():

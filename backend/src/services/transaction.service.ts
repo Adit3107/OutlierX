@@ -13,6 +13,7 @@ import { CsvParserService } from './csv-ingestion.service.js';
 import { StorageProvider } from './storage.service.js';
 import { BadRequestError, ConflictError, NotFoundError } from '../utils/errors.js';
 import { RuleService } from '../modules/rules/services/rule.service.js';
+import { PredictionService, toPredictionDto } from './prediction.service.js';
 
 function toUpload(upload: Awaited<ReturnType<UploadRepository['create']>>): Upload {
   return {
@@ -59,6 +60,7 @@ function toTransaction(
     customerId: transaction.customerId,
     status: 'IMPORTED',
     metadata: (transaction.metadata as Record<string, unknown> | null) ?? null,
+    mlPrediction: toPredictionDto(transaction.mlPrediction),
     createdAt: transaction.createdAt,
     updatedAt: transaction.updatedAt,
     upload: transaction.upload
@@ -164,7 +166,8 @@ export class UploadService {
     private storageProvider: StorageProvider,
     private activityService: ActivityService,
     private transactionRepository: TransactionRepository,
-    private ruleService?: RuleService
+    private ruleService?: RuleService,
+    private predictionService?: PredictionService
   ) {}
 
   async uploadCsv(input: {
@@ -279,6 +282,41 @@ export class UploadService {
             metadata: {
               source: 'UPLOAD',
               reason: ruleError instanceof Error ? ruleError.message : 'Rule evaluation failed',
+            },
+          });
+        }
+      }
+
+      if (this.predictionService && uploadRecord.processedRows > 0) {
+        try {
+          const transactions = await this.transactionRepository.listAllByUpload(
+            input.organizationId,
+            uploadRecord.id
+          );
+          const result = await this.predictionService.processTransactionsBestEffort(
+            input.organizationId,
+            transactions
+          );
+          await this.activityService.log({
+            organizationId: input.organizationId,
+            userId: input.userId,
+            action: 'ml.predicted',
+            entity: 'TRANSACTION',
+            entityId: uploadRecord.id,
+            metadata: { processed: result.processed, failed: result.failed },
+          });
+        } catch (predictionError) {
+          await this.activityService.log({
+            organizationId: input.organizationId,
+            userId: input.userId,
+            action: 'ml.prediction_failed',
+            entity: 'TRANSACTION',
+            entityId: uploadRecord.id,
+            metadata: {
+              reason:
+                predictionError instanceof Error
+                  ? predictionError.message
+                  : 'ML prediction failed',
             },
           });
         }

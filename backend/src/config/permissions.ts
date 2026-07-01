@@ -1,0 +1,40 @@
+import { PERMISSIONS, Role, Permission } from '@anomaly/shared';
+
+export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
+  OWNER: Object.values(PERMISSIONS),
+  ADMIN: [
+    PERMISSIONS.ORGANIZATION_READ,
+    PERMISSIONS.ORGANIZATION_UPDATE,
+    PERMISSIONS.MEMBERS_READ,
+    PERMISSIONS.MEMBERS_CREATE,
+    PERMISSIONS.MEMBERS_UPDATE,
+    PERMISSIONS.API_KEYS_READ,
+    PERMISSIONS.API_KEYS_CREATE,
+    PERMISSIONS.API_KEYS_DELETE,
+    PERMISSIONS.ACTIVITY_READ,
+  ],
+  ANALYST: [
+    PERMISSIONS.ORGANIZATION_READ,
+    PERMISSIONS.MEMBERS_READ,
+    PERMISSIONS.API_KEYS_READ,
+    PERMISSIONS.ACTIVITY_READ,
+  ],
+  MEMBER: [
+    PERMISSIONS.ORGANIZATION_READ,
+    PERMISSIONS.MEMBERS_READ,
+    PERMISSIONS.ACTIVITY_READ,
+  ],
+  VIEWER: [
+    PERMISSIONS.ORGANIZATION_READ,
+    PERMISSIONS.MEMBERS_READ,
+    PERMISSIONS.ACTIVITY_READ,
+  ],
+};
+
+export function getPermissionsForRole(role: Role): Permission[] {
+  return ROLE_PERMISSIONS[role] ?? [];
+}
+
+export function hasPermission(role: Role, permission: Permission): boolean {
+  return getPermissionsForRole(role).includes(permission);
+}

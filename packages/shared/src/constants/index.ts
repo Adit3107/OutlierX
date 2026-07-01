@@ -6,9 +6,73 @@ export const TRANSACTION_STATUSES = {
 } as const;
 
 export const USER_ROLES = {
-  ADMIN: 'ADMIN',
-  MEMBER: 'MEMBER',
   OWNER: 'OWNER',
+  ADMIN: 'ADMIN',
+  ANALYST: 'ANALYST',
+  MEMBER: 'MEMBER',
+  VIEWER: 'VIEWER',
+} as const;
+
+export const USER_STATUSES = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  SUSPENDED: 'SUSPENDED',
+} as const;
+
+export const MEMBERSHIP_STATUSES = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  INVITED: 'INVITED',
+  SUSPENDED: 'SUSPENDED',
+} as const;
+
+export const SUBSCRIPTION_PLANS = {
+  FREE: 'FREE',
+  PRO: 'PRO',
+  ENTERPRISE: 'ENTERPRISE',
+} as const;
+
+export const SUBSCRIPTION_STATUSES = {
+  ACTIVE: 'ACTIVE',
+  TRIAL: 'TRIAL',
+  PAST_DUE: 'PAST_DUE',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+export const API_KEY_STATUSES = {
+  ACTIVE: 'ACTIVE',
+  REVOKED: 'REVOKED',
+  EXPIRED: 'EXPIRED',
+} as const;
+
+export const ALERT_SEVERITIES = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
+  CRITICAL: 'CRITICAL',
+} as const;
+
+export const ACTIVITY_ENTITIES = {
+  USER: 'USER',
+  ORGANIZATION: 'ORGANIZATION',
+  MEMBERSHIP: 'MEMBERSHIP',
+  API_KEY: 'API_KEY',
+  UPLOAD: 'UPLOAD',
+  ALERT: 'ALERT',
+  SYSTEM: 'SYSTEM',
+} as const;
+
+export const PERMISSIONS = {
+  ORGANIZATION_READ: 'organization:read',
+  ORGANIZATION_UPDATE: 'organization:update',
+  MEMBERS_READ: 'members:read',
+  MEMBERS_CREATE: 'members:create',
+  MEMBERS_UPDATE: 'members:update',
+  MEMBERS_DELETE: 'members:delete',
+  API_KEYS_READ: 'api-keys:read',
+  API_KEYS_CREATE: 'api-keys:create',
+  API_KEYS_DELETE: 'api-keys:delete',
+  ACTIVITY_READ: 'activity:read',
 } as const;
 
 export const RULE_TYPES = {

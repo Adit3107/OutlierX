@@ -1,5 +1,13 @@
 import { z } from 'zod';
-import { SUPPORTED_CURRENCIES, TRANSACTION_CATEGORIES, RULE_TYPES, TRANSACTION_STATUSES } from '../constants/index.js';
+import {
+  API_KEY_STATUSES,
+  MEMBERSHIP_STATUSES,
+  RULE_TYPES,
+  SUPPORTED_CURRENCIES,
+  TRANSACTION_CATEGORIES,
+  TRANSACTION_STATUSES,
+  USER_ROLES,
+} from '../constants/index.js';
 
 export const TransactionCreateSchema = z.object({
   amount: z.number().positive('Amount must be greater than 0'),
@@ -37,4 +45,43 @@ export const QueryTransactionsSchema = z.object({
   category: z.string().optional(),
   status: z.enum(Object.values(TRANSACTION_STATUSES) as [string, ...string[]]).optional(),
   anomalous: z.preprocess((val) => val === 'true', z.boolean()).optional(),
+});
+
+export const OrganizationUpdateSchema = z.object({
+  name: z.string().min(2).max(120).optional(),
+  slug: z
+    .string()
+    .min(3)
+    .max(80)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must use lowercase letters, numbers, and hyphens')
+    .optional(),
+  logo: z.string().url().nullable().optional(),
+  industry: z.string().max(120).nullable().optional(),
+  website: z.string().url().nullable().optional(),
+});
+
+export const MemberCreateSchema = z.object({
+  email: z.string().email(),
+  role: z.enum(Object.values(USER_ROLES) as [string, ...string[]]).default(USER_ROLES.MEMBER),
+});
+
+export const MemberUpdateSchema = z.object({
+  role: z.enum(Object.values(USER_ROLES) as [string, ...string[]]).optional(),
+  status: z.enum(Object.values(MEMBERSHIP_STATUSES) as [string, ...string[]]).optional(),
+}).refine((value) => value.role !== undefined || value.status !== undefined, {
+  message: 'At least one member field must be provided',
+});
+
+export const ApiKeyCreateSchema = z.object({
+  name: z.string().min(2).max(120),
+  expiresAt: z.string().datetime().optional(),
+});
+
+export const ApiKeyQuerySchema = z.object({
+  status: z.enum(Object.values(API_KEY_STATUSES) as [string, ...string[]]).optional(),
+});
+
+export const PaginationQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
 });

@@ -1,38 +1,90 @@
-import { createClerkClient } from '@clerk/backend';
+import { createClerkClient, verifyToken } from '@clerk/backend';
 import { Request, Response, NextFunction } from 'express';
 import { config } from '../config/index.js';
-import { UnauthorizedError } from '../utils/errors.js';
-import { logger } from '../lib/logger.js';
+import { getPermissionsForRole, hasPermission } from '../config/permissions.js';
+import { AuthRepository } from '../repositories/auth.repository.js';
+import { AuthService, mapClerkUserToProfile } from '../services/auth.service.js';
+import { ApiError, ForbiddenError, UnauthorizedError } from '../utils/errors.js';
 
-// Initialize Clerk SDK
 export const clerkClient = createClerkClient({
   secretKey: config.auth.clerkSecretKey,
   publishableKey: config.auth.clerkPublishableKey,
 });
 
-/**
- * Placeholder authentication middleware.
- * Verifies standard Authorization header existence and mocks request context.
- * Role validation and Clerk token verification will be fully implemented in subsequent phases.
- */
-export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
+const authService = new AuthService(new AuthRepository());
+
+function getBearerToken(req: Request): string {
   const authHeader = req.headers.authorization;
 
-  if (config.server.env === 'production') {
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedError('Missing or invalid Authorization header credentials');
-    }
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    throw new UnauthorizedError('Missing or invalid Authorization header credentials');
   }
 
-  logger.debug('Auth middleware placeholder called, attaching mock auth credentials');
+  const token = authHeader.slice('Bearer '.length).trim();
+  if (!token) {
+    throw new UnauthorizedError('Missing bearer token');
+  }
 
-  // Attach mock auth profile to Express request interface
-  (req as any).auth = {
-    userId: 'user_dev_placeholder_99',
-    orgId: 'org_dev_placeholder_88',
-    role: 'ADMIN',
-  };
-
-  next();
+  return token;
 }
+
+export async function requireAuth(req: Request, _res: Response, next: NextFunction): Promise<void> {
+  try {
+    const token = getBearerToken(req);
+    const verifiedToken = await verifyToken(token, {
+      secretKey: config.auth.clerkSecretKey,
+      authorizedParties: [config.server.frontendUrl],
+    });
+
+    const clerkUserId = verifiedToken.sub;
+    if (!clerkUserId) {
+      throw new UnauthorizedError('Invalid Clerk token subject');
+    }
+
+    const clerkUser = await clerkClient.users.getUser(clerkUserId);
+    const authContext = await authService.syncAuthenticatedUser(
+      mapClerkUserToProfile(clerkUser, clerkUserId)
+    );
+
+    req.auth = {
+      ...authContext,
+      clerkUserId,
+      role: authContext.role,
+      permissions: getPermissionsForRole(authContext.role),
+    };
+
+    next();
+  } catch (error) {
+    next(error instanceof ApiError ? error : new UnauthorizedError('Invalid or expired token'));
+  }
+}
+
+export function requireRole(...roles: NonNullable<Request['auth']>['role'][]) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    if (!req.auth) {
+      throw new UnauthorizedError('Authentication is required');
+    }
+
+    if (!roles.includes(req.auth.role)) {
+      throw new ForbiddenError('Insufficient role for this operation');
+    }
+
+    next();
+  };
+}
+
+export function requirePermission(permission: NonNullable<Request['auth']>['permissions'][number]) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    if (!req.auth) {
+      throw new UnauthorizedError('Authentication is required');
+    }
+
+    if (!hasPermission(req.auth.role, permission)) {
+      throw new ForbiddenError('Insufficient permission for this operation');
+    }
+
+    next();
+  };
+}
+
 export default requireAuth;

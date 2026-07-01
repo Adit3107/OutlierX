@@ -1,10 +1,16 @@
 import { Response } from 'express';
 import { ApiResponse } from '@anomaly/shared';
 
-export function sendSuccess<T>(res: Response, data: T, statusCode = 200): Response<ApiResponse<T>> {
+export function sendSuccess<T>(
+  res: Response,
+  data: T,
+  statusCode = 200,
+  message = 'Request completed successfully'
+): Response<ApiResponse<T>> {
   const responseBody: ApiResponse<T> = {
     success: true,
     data,
+    message,
     timestamp: new Date().toISOString(),
   };
   return res.status(statusCode).json(responseBody);
@@ -24,6 +30,7 @@ export function sendError(
       message,
       details,
     },
+    message,
     timestamp: new Date().toISOString(),
   };
   return res.status(statusCode).json(responseBody);

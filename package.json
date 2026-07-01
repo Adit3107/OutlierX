@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "dev": "concurrently -n \"shared,backend,frontend,ml\" -c \"cyan,blue,green,magenta\" \"npm run dev -w @anomaly/shared\" \"npm run dev -w @anomaly/backend\" \"npm run dev -w @anomaly/frontend\" \"npm run dev -w @anomaly/ml-service\"",
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build -w @anomaly/shared && npm run build -w @anomaly/backend && npm run build -w @anomaly/frontend",
     "lint": "npm run lint --workspaces --if-present",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md,yaml,yml}\"",
     "typecheck": "npm run typecheck --workspaces --if-present",

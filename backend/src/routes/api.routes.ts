@@ -9,6 +9,7 @@ import {
   OrganizationController,
 } from '../controllers/foundation.controller.js';
 import { TransactionController, UploadController } from '../controllers/transaction.controller.js';
+import { PredictionController } from '../controllers/prediction.controller.js';
 import { RuleController } from '../modules/rules/controllers/rule.controller.js';
 import { requireAuth, requirePermission } from '../middlewares/auth.middleware.js';
 import { uploadCsvMiddleware } from '../middlewares/upload.middleware.js';
@@ -60,6 +61,9 @@ import {
   TransactionPersistenceService,
 } from '../services/csv-ingestion.service.js';
 import { TransactionService, UploadService } from '../services/transaction.service.js';
+import { MLClientService } from '../services/ml-client.service.js';
+import { PredictionService } from '../services/prediction.service.js';
+import { PredictionRepository } from '../repositories/prediction.repository.js';
 import { createStorageProvider } from '../services/storage.service.js';
 import { RuleRepository } from '../modules/rules/repositories/rule.repository.js';
 import { RuleEngineService } from '../modules/rules/services/rule-engine.service.js';
@@ -84,6 +88,11 @@ const apiKeyController = new ApiKeyController(
 const activityController = new ActivityController(activityService);
 const uploadRepository = new UploadRepository();
 const transactionRepository = new TransactionRepository();
+const predictionService = new PredictionService(
+  new PredictionRepository(),
+  transactionRepository,
+  new MLClientService()
+);
 const ruleRepository = new RuleRepository();
 const ruleService = new RuleService(
   ruleRepository,
@@ -104,12 +113,14 @@ const uploadController = new UploadController(
     storageProvider,
     activityService,
     transactionRepository,
-    ruleService
+    ruleService,
+    predictionService
   )
 );
 const transactionController = new TransactionController(
   new TransactionService(transactionRepository, uploadRepository, activityService)
 );
+const predictionController = new PredictionController(predictionService);
 const ruleController = new RuleController(ruleService);
 
 apiRouter.get('/health', healthController.getHealth);
@@ -300,6 +311,12 @@ apiRouter.get(
   requirePermission(PERMISSIONS.TRANSACTIONS_READ),
   validateParams(idParamsValidator),
   transactionController.getById
+);
+apiRouter.post(
+  '/transactions/:id/ml-prediction',
+  requirePermission(PERMISSIONS.TRANSACTIONS_READ),
+  validateParams(idParamsValidator),
+  predictionController.predictTransaction
 );
 apiRouter.delete(
   '/transactions/:id',

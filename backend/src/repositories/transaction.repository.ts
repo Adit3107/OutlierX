@@ -149,6 +149,7 @@ export class TransactionRepository {
 
   private includeTraceability() {
     return {
+      mlPrediction: true,
       upload: {
         select: {
           id: true,
@@ -216,6 +217,12 @@ export class TransactionRepository {
     return this.db.transaction.findFirst({
       where: { id, organizationId },
       include: this.includeTraceability(),
+    });
+  }
+
+  findRawById(organizationId: string, id: string) {
+    return this.db.transaction.findFirst({
+      where: { id, organizationId },
     });
   }
 

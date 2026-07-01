@@ -7,7 +7,7 @@ OutlierX is a multi-tenant SaaS foundation for financial anomaly detection. This
 - Monorepo: npm workspaces
 - Frontend: Next.js 15, TypeScript, TailwindCSS, Clerk, TanStack Query, Axios
 - Backend API: Express, TypeScript, Prisma ORM, Neon PostgreSQL, Clerk Backend SDK
-- ML service: FastAPI scaffold retained for later phases
+- ML service: FastAPI inference service with Isolation Forest anomaly prediction
 - Shared package: common constants, types, schemas, and utilities
 
 ## Database Schema
@@ -22,6 +22,7 @@ Core models:
 - `ApiKey`: organization-scoped API keys storing only hashed key material.
 - `Upload`: organization-scoped CSV upload tracking with file hash, storage key, lifecycle status, row counts, processing time, and bounded validation error summary.
 - `Transaction`: normalized transaction rows imported from CSV uploads. Rows are scoped by organization and upload, indexed by transaction ID, timestamp, merchant, country, amount, and upload ID.
+- `MlPrediction`: latest machine learning prediction for a transaction. ML scores are stored separately from deterministic rule results and are not final risk decisions.
 - `Alert`: organization/user alert foundation.
 - `ActivityLog`: organization-scoped audit trail with JSON metadata.
 
@@ -39,7 +40,7 @@ Important enums:
 
 The ingestion module accepts CSV transaction files only. The backend stores the original file through a storage abstraction, creates an upload record, parses the CSV with a streaming parser, validates each row independently, persists valid transactions in batches, updates upload summary counters, and records activity logs.
 
-No anomaly detection, risk scoring, ML calls, Kafka, Redis, or rule engine behavior is part of this module.
+The ingestion module stores transactions first, then triggers deterministic rule execution and best-effort ML prediction as separate follow-up workflows. Kafka, Redis, final risk scoring, and alert triggering are not part of this module.
 
 CSV limits and validation:
 
@@ -141,6 +142,48 @@ Permissions:
 - OWNER and ADMIN can create, update, delete, duplicate, reorder, enable, disable, test, and evaluate rules.
 - ANALYST can read and test rules.
 - VIEWER can read rules only.
+
+## Machine Learning Service
+
+The ML service is an independent FastAPI app under `ml-service`. It does not import Express code, access the database, call the rule engine, trigger alerts, or produce final risk levels. Its only responsibility is returning model predictions.
+
+Inference pipeline:
+
+1. A raw transaction is accepted through `POST /predict` or `POST /predict/batch`.
+2. The reusable feature pipeline transforms it into numeric features.
+3. Missing values, categorical encodings, frequency features, time fields, amount scaling, and transaction age are normalized.
+4. The loaded Isolation Forest model returns an anomaly score and model prediction.
+5. The response includes `prediction`, `anomalyScore`, `confidence`, `modelVersion`, and `inferenceTimeMs`.
+
+FastAPI endpoints:
+
+- `GET /health`
+- `GET /version`
+- `POST /predict`
+- `POST /predict/batch`
+- `POST /reload-model`
+- `GET /model/info`
+
+Feature engineering is shared by training and inference. The first feature version includes amount, hour of day, day of week, merchant frequency, country frequency, payment method encoding, currency encoding, transaction age, category encoding, and missing-value ratio.
+
+Model lifecycle:
+
+- `ModelManager` loads a cached model once and reuses it for requests.
+- If `models/isolation_forest.joblib` is missing, the service trains an in-memory development baseline from bundled sample transactions.
+- If an artifact is invalid or unavailable, the service exposes the error in model info and falls back to the development baseline instead of crashing.
+- The training package includes `TrainingService`, `DatasetLoader`, `ModelTrainer`, and `ModelEvaluator` as script-ready architecture, without a UI.
+
+Backend integration:
+
+- Express calls the FastAPI batch endpoint through `MLClientService`.
+- `PredictionService` persists results through `PredictionRepository` into `MlPrediction`.
+- Upload-time prediction is automatic and best-effort after CSV rows are stored. ML timeouts or service outages are logged but never fail the upload or rule execution.
+- Transaction list/detail responses include the latest `mlPrediction` object when available.
+
+Frontend:
+
+- Transaction details show an `AI Analysis` card with ML Prediction, Confidence, Model Version, Inference Time, and Processed At.
+- ML prediction styling uses the accent color only. Severity colors and final risk badges are intentionally not shown.
 
 ## Authentication Flow
 

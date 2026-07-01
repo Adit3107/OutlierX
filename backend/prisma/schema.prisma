@@ -174,6 +174,7 @@ model Organization {
   alerts       Alert[]
   rules        Rule[]
   ruleExecutions RuleExecution[]
+  mlPredictions MlPrediction[]
   activityLogs ActivityLog[]
 
   @@index([subscriptionPlan])
@@ -282,6 +283,7 @@ model Transaction {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   upload       Upload       @relation(fields: [uploadId], references: [id], onDelete: Cascade)
   ruleExecutions RuleExecution[]
+  mlPrediction MlPrediction?
 
   @@index([organizationId])
   @@index([transactionId])
@@ -296,6 +298,30 @@ model Transaction {
   @@index([organizationId, country])
   @@index([organizationId, currency])
   @@index([organizationId, status])
+}
+
+model MlPrediction {
+  id              String   @id @default(uuid())
+  organizationId  String
+  transactionId   String   @unique
+  mlScore         Float
+  mlPrediction    String
+  confidence      Float
+  modelVersion    String
+  processedAt     DateTime
+  processingTime  Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transaction  Transaction  @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([transactionId])
+  @@index([mlPrediction])
+  @@index([modelVersion])
+  @@index([processedAt])
+  @@index([organizationId, processedAt])
 }
 
 model Rule {

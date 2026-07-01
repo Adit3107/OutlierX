@@ -73,7 +73,7 @@ function formatCurrency(value: number, currency: string) {
 
 function validateCsv(file: File | null): string | null {
   if (!file) {
-    return 'Select a CSV file to upload';
+    return null;
   }
 
   if (!file.name.toLowerCase().endsWith('.csv')) {
@@ -735,6 +735,11 @@ export function OperatorConsole({ auth }: { auth: AuthContext | null }) {
   });
 
   const submitUpload = () => {
+    if (!file) {
+      toast.error('Select a CSV file to upload');
+      return;
+    }
+
     const error = validateCsv(file);
     if (error) {
       toast.error(error);

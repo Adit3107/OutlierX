@@ -19,6 +19,7 @@ import {
   ExternalLink,
   Filter,
   GitBranch,
+  Sparkles,
   Moon,
   PanelRightClose,
   RefreshCw,
@@ -448,6 +449,43 @@ function InfoField({ label, value, mono = false }: { label: string; value?: Reac
   );
 }
 
+function formatPercent(value?: number | null) {
+  if (value === null || value === undefined) {
+    return '-';
+  }
+
+  return new Intl.NumberFormat(undefined, {
+    maximumFractionDigits: 1,
+    style: 'percent',
+  }).format(value);
+}
+
+export function AiAnalysisCard({ transaction }: { transaction: Transaction }) {
+  const prediction = transaction.mlPrediction;
+
+  return (
+    <section className="rounded-md border border-accent/35 bg-surface">
+      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+        <Sparkles className="h-4 w-4 text-accent" />
+        <h2 className="font-display text-base font-semibold">AI Analysis</h2>
+      </div>
+      {prediction ? (
+        <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-5">
+          <InfoField label="ML Prediction" mono value={prediction.mlPrediction} />
+          <InfoField label="Confidence" mono value={formatPercent(prediction.confidence)} />
+          <InfoField label="Model Version" mono value={prediction.modelVersion} />
+          <InfoField label="Inference Time" mono value={`${prediction.processingTime} ms`} />
+          <InfoField label="Processed At" mono value={formatDate(prediction.processedAt)} />
+        </div>
+      ) : (
+        <div className="p-4 text-sm text-muted-foreground">
+          ML prediction has not been processed for this transaction yet.
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function MetadataViewer({ value }: { value?: Record<string, unknown> | null }) {
   const [expanded, setExpanded] = React.useState(true);
   const json = JSON.stringify(value ?? {}, null, 2);
@@ -511,6 +549,7 @@ export function TransactionDetails({ transaction }: { transaction: Transaction }
         <InfoField label="Organization" value={transaction.upload?.organization?.name} />
         <InfoField label="CSV Row" mono value={sourceRow(transaction)} />
       </section>
+      <AiAnalysisCard transaction={transaction} />
       <MetadataViewer value={transaction.metadata} />
     </div>
   );

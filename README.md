@@ -143,6 +143,37 @@ Permissions:
 - ANALYST can read and test rules.
 - VIEWER can read rules only.
 
+## Decision Engine
+
+The Decision Engine combines persisted Rule Engine results with persisted Machine Learning predictions into a final explainable risk assessment. It does not evaluate rules and does not call ML inference; it consumes the latest available upstream outputs and stores immutable decision history.
+
+Architecture:
+
+- Backend decision code lives under `backend/src/modules/decision-engine`.
+- `DecisionService` orchestrates input lookup, calculation, persistence, and audit logging.
+- `WeightStrategy`, `DecisionCalculator`, `ConfidenceCalculator`, `ExplanationGenerator`, and `RecommendationGenerator` each own one part of the decision pipeline.
+- Prisma stores every `Decision` record with rule score, ML score, final score, confidence, risk level, strategy, version, explanation JSON, recommendation, and timestamps.
+
+Decision lifecycle:
+
+1. Upload processing stores transactions, then evaluates rules, then persists ML predictions.
+2. The Decision Engine reuses the latest `RuleExecution` and current `MlPrediction`.
+3. The default `weighted-rule-ml-v1` strategy combines Rule Engine score at 60% and ML score at 40%.
+4. Final score is classified as `LOW` `0-39.99`, `MEDIUM` `40-69.99`, `HIGH` `70-89.99`, and `CRITICAL` `90-100`.
+5. Recommendation thresholds map scores to Approve, Monitor, Manual Review, Escalate, or Block Transaction.
+6. Recalculation creates a new history record and never overwrites previous decisions.
+
+Explainability:
+
+- Decision explanation JSON includes human-readable reasons, triggered rules, ML analysis, weighted calculations, thresholds used, timeline events, processing time, and recommendation rationale.
+- Confidence combines rule confidence, ML confidence, and decision consistency into a `0-100%` value.
+- Audit logs record generated and recalculated decisions, plus risk-level and recommendation changes.
+
+Frontend:
+
+- Transaction details show a Decision Summary card with final risk level, score, confidence, recommendation, strategy, decision time, triggered rules, ML analysis, explanation, timeline, and collapsible calculation details.
+- Severity colors are reserved for risk-specific surfaces: decision badges, borders, banners, timeline markers, tables, and charts.
+
 ## Machine Learning Service
 
 The ML service is an independent FastAPI app under `ml-service`. It does not import Express code, access the database, call the rule engine, trigger alerts, or produce final risk levels. Its only responsibility is returning model predictions.

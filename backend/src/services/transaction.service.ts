@@ -14,6 +14,7 @@ import { StorageProvider } from './storage.service.js';
 import { BadRequestError, ConflictError, NotFoundError } from '../utils/errors.js';
 import { RuleService } from '../modules/rules/services/rule.service.js';
 import { PredictionService, toPredictionDto } from './prediction.service.js';
+import { DecisionService } from '../modules/decision-engine/services/decision.service.js';
 
 function toUpload(upload: Awaited<ReturnType<UploadRepository['create']>>): Upload {
   return {
@@ -167,7 +168,8 @@ export class UploadService {
     private activityService: ActivityService,
     private transactionRepository: TransactionRepository,
     private ruleService?: RuleService,
-    private predictionService?: PredictionService
+    private predictionService?: PredictionService,
+    private decisionService?: DecisionService
   ) {}
 
   async uploadCsv(input: {
@@ -317,6 +319,48 @@ export class UploadService {
                 predictionError instanceof Error
                   ? predictionError.message
                   : 'ML prediction failed',
+            },
+          });
+        }
+      }
+
+      if (this.decisionService && uploadRecord.processedRows > 0) {
+        try {
+          const transactions = await this.transactionRepository.listAllByUpload(
+            input.organizationId,
+            uploadRecord.id
+          );
+          if (transactions.length > 0) {
+            const result = await this.decisionService.recalculate(
+              input.organizationId,
+              input.userId,
+              transactions.map((transaction) => transaction.id),
+              'GENERATED'
+            );
+            await this.activityService.log({
+              organizationId: input.organizationId,
+              userId: input.userId,
+              action: 'decision.batch_completed',
+              entity: 'TRANSACTION',
+              entityId: uploadRecord.id,
+              metadata: {
+                created: result.filter((item) => item.status === 'CREATED').length,
+                failed: result.filter((item) => item.status === 'FAILED').length,
+              },
+            });
+          }
+        } catch (decisionError) {
+          await this.activityService.log({
+            organizationId: input.organizationId,
+            userId: input.userId,
+            action: 'decision.generation_failed',
+            entity: 'TRANSACTION',
+            entityId: uploadRecord.id,
+            metadata: {
+              reason:
+                decisionError instanceof Error
+                  ? decisionError.message
+                  : 'Decision generation failed',
             },
           });
         }

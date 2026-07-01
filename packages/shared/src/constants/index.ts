@@ -96,6 +96,18 @@ export const RISK_LEVELS = {
   CRITICAL: 'CRITICAL',
 } as const;
 
+export const DECISION_RECOMMENDATIONS = {
+  APPROVE: 'APPROVE',
+  MONITOR: 'MONITOR',
+  MANUAL_REVIEW: 'MANUAL_REVIEW',
+  BLOCK_TRANSACTION: 'BLOCK_TRANSACTION',
+  ESCALATE: 'ESCALATE',
+} as const;
+
+export const DECISION_STRATEGIES = {
+  WEIGHTED_RULE_ML_V1: 'weighted-rule-ml-v1',
+} as const;
+
 export const RULE_EXECUTION_SOURCES = {
   UPLOAD: 'UPLOAD',
   MANUAL: 'MANUAL',
@@ -129,6 +141,8 @@ export const PERMISSIONS = {
   UPLOADS_DELETE: 'uploads:delete',
   TRANSACTIONS_READ: 'transactions:read',
   TRANSACTIONS_DELETE: 'transactions:delete',
+  DECISIONS_READ: 'decisions:read',
+  DECISIONS_WRITE: 'decisions:write',
   RULES_READ: 'rules:read',
   RULES_TEST: 'rules:test',
   RULES_CREATE: 'rules:create',

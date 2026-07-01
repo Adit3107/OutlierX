@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import {
   API_KEY_STATUSES,
+  DECISION_RECOMMENDATIONS,
+  DECISION_STRATEGIES,
   MEMBERSHIP_STATUSES,
+  RISK_LEVELS,
   RULE_TYPES,
   SUPPORTED_CURRENCIES,
   TRANSACTION_STATUSES,
@@ -28,6 +31,9 @@ const conditionOperatorValues = [
 ] as const;
 const logicalOperatorValues = ['AND', 'OR'] as const;
 const ruleExecutionSourceValues = ['UPLOAD', 'MANUAL', 'PLAYGROUND'] as const;
+const riskLevelValues = Object.values(RISK_LEVELS) as [string, ...string[]];
+const decisionRecommendationValues = Object.values(DECISION_RECOMMENDATIONS) as [string, ...string[]];
+const decisionStrategyValues = Object.values(DECISION_STRATEGIES) as [string, ...string[]];
 
 export const TransactionCreateSchema = z.object({
   transactionId: z.string().min(1).max(255),
@@ -149,6 +155,48 @@ export const RuleEvaluateSchema = z.object({
   transactionIds: z.array(z.string().uuid()).min(1).max(500),
   ruleIds: z.array(z.string().uuid()).max(100).optional(),
   source: z.enum(ruleExecutionSourceValues).default('MANUAL'),
+});
+
+export const DecisionQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  transactionId: z.string().uuid().optional(),
+  riskLevel: z.enum(riskLevelValues).optional(),
+  recommendation: z.enum(decisionRecommendationValues).optional(),
+  decisionStrategy: z.enum(decisionStrategyValues).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+}).refine((value) => !value.startDate || !value.endDate || new Date(value.startDate) <= new Date(value.endDate), {
+  message: 'Start date must be before end date',
+  path: ['startDate'],
+});
+
+export const DecisionRecalculateSchema = z.object({
+  transactionIds: z.array(z.string().uuid()).min(1).max(500),
+});
+
+export const DecisionSignalSchema = z.object({
+  score: z.number().min(0).max(100),
+  confidence: z.number().min(0).max(1).optional(),
+});
+
+export const DecisionTestSchema = z.object({
+  rule: DecisionSignalSchema.extend({
+    triggeredRules: z.array(z.object({
+      ruleId: z.string().default('test-rule'),
+      ruleName: z.string().default('Test rule'),
+      category: z.enum(ruleCategoryValues).default('CUSTOM'),
+      severity: z.enum(alertSeverityValues).default('MEDIUM'),
+      matched: z.boolean().default(true),
+      score: z.number().min(0).max(100),
+      explanation: z.string().min(1).default('Rule signal matched the test transaction.'),
+    })).default([]),
+  }),
+  ml: DecisionSignalSchema.extend({
+    prediction: z.string().min(1).default('TEST_ANOMALY'),
+    modelVersion: z.string().min(1).default('test'),
+    processingTime: z.number().int().nonnegative().default(0),
+  }),
 });
 
 export const QueryTransactionsSchema = z.object({

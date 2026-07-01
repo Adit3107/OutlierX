@@ -10,6 +10,8 @@ import { useTheme } from 'next-themes';
 import {
   ArrowDown,
   ArrowUp,
+  BrainCircuit,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -32,7 +34,7 @@ import {
   X,
 } from 'lucide-react';
 import type { AxiosInstance } from 'axios';
-import type { ApiDate, AuthContext, PaginatedResponse, Transaction } from '@anomaly/shared';
+import type { ApiDate, AuthContext, Decision, DecisionRecommendation, PaginatedResponse, Transaction } from '@anomaly/shared';
 import { PERMISSIONS, SUPPORTED_CURRENCIES } from '@anomaly/shared';
 import { createApiClient } from '../../lib/api-client';
 import { useAuthData } from '../../providers/auth-provider';
@@ -42,7 +44,8 @@ import {
   TransactionSortBy,
   useTransactionFilters,
 } from '../../hooks/transactions/use-transaction-filters';
-import { useTransaction, useTransactions } from '../../hooks/transactions/use-transactions';
+import { useTransaction, useTransactionDecision, useTransactions } from '../../hooks/transactions/use-transactions';
+import { getSeverityConfig } from '../../constants/severity';
 
 function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ');
@@ -486,6 +489,164 @@ export function AiAnalysisCard({ transaction }: { transaction: Transaction }) {
   );
 }
 
+function formatScore(value?: number | null) {
+  if (value === null || value === undefined) {
+    return '-';
+  }
+  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value);
+}
+
+function recommendationLabel(value: DecisionRecommendation) {
+  return value
+    .toLowerCase()
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function DecisionBadge({ decision }: { decision: Decision }) {
+  const severity = getSeverityConfig(decision.riskLevel);
+  return (
+    <span className={cn('inline-flex h-7 items-center rounded-md border px-2 font-mono text-xs uppercase', severity.borderClassName, severity.bgClassName, severity.className)}>
+      {severity.label}
+    </span>
+  );
+}
+
+function DecisionTimeline({ decision }: { decision: Decision }) {
+  const severity = getSeverityConfig(decision.riskLevel);
+  return (
+    <div className="grid gap-2 md:grid-cols-3">
+      {decision.explanation.timeline.map((item, index) => (
+        <div key={`${item.label}-${index}`} className={cn('rounded-md border bg-surface-alt p-3', index === 2 ? severity.borderClassName : 'border-border')}>
+          <div className="flex items-center gap-2">
+            <span className={cn('h-2.5 w-2.5 rounded-full', index === 2 ? severity.bgClassName.replace('/15', '') : 'bg-muted-foreground')} />
+            <p className="text-xs font-medium text-foreground">{item.label}</p>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">{item.description}</p>
+          <p className="mt-2 font-mono text-[11px] text-muted-foreground">{formatDate(item.timestamp)}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function DecisionDetailsSection({ decision }: { decision: Decision }) {
+  const [open, setOpen] = React.useState(false);
+  const explanation = decision.explanation;
+
+  return (
+    <section className="rounded-md border border-border bg-surface">
+      <button className="flex w-full items-center justify-between px-4 py-3 text-left" onClick={() => setOpen((current) => !current)} type="button">
+        <span className="font-display text-base font-semibold">Decision Details</span>
+        <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
+      </button>
+      {open ? (
+        <div className="grid gap-3 border-t border-border p-4 lg:grid-cols-2">
+          <div className="rounded-md border border-border bg-surface-alt p-3">
+            <p className="text-[11px] uppercase text-muted-foreground">Rule Breakdown</p>
+            <p className="mt-2 font-mono text-xs">Score {formatScore(explanation.ruleBreakdown.score)} / {explanation.ruleBreakdown.riskLevel ?? '-'}</p>
+            <div className="mt-2 space-y-2">
+              {explanation.ruleBreakdown.triggeredRules.length > 0 ? explanation.ruleBreakdown.triggeredRules.map((rule) => (
+                <p key={`${rule.ruleId}-${rule.ruleName}`} className="text-xs text-muted-foreground">{rule.ruleName}: {rule.explanation}</p>
+              )) : <p className="text-xs text-muted-foreground">No triggered rules were included in this decision.</p>}
+            </div>
+          </div>
+          <div className="rounded-md border border-border bg-surface-alt p-3">
+            <p className="text-[11px] uppercase text-muted-foreground">ML Breakdown</p>
+            <p className="mt-2 font-mono text-xs">{explanation.mlBreakdown.prediction} / score {formatScore(explanation.mlBreakdown.score)}</p>
+            <p className="mt-2 text-xs text-muted-foreground">Model {explanation.mlBreakdown.modelVersion ?? '-'} completed in {explanation.mlBreakdown.processingTime ?? 0} ms.</p>
+          </div>
+          <div className="rounded-md border border-border bg-surface-alt p-3">
+            <p className="text-[11px] uppercase text-muted-foreground">Weight Calculations</p>
+            <div className="mt-2 space-y-1 font-mono text-xs">
+              {explanation.weights.map((weight) => (
+                <p key={weight.name}>{weight.label}: {formatScore(weight.score)} x {weight.weight} = {formatScore(weight.weightedScore)}</p>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-md border border-border bg-surface-alt p-3">
+            <p className="text-[11px] uppercase text-muted-foreground">Thresholds and Version</p>
+            <p className="mt-2 font-mono text-xs">Version {decision.decisionVersion}</p>
+            <p className="mt-1 font-mono text-xs">Processing {explanation.processingTime} ms</p>
+            <p className="mt-2 text-xs text-muted-foreground">LOW 0-39.99 / MEDIUM 40-69.99 / HIGH 70-89.99 / CRITICAL 90-100</p>
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+export function DecisionSummaryCard({
+  transaction,
+  client,
+}: {
+  transaction: Transaction;
+  client?: AxiosInstance;
+}) {
+  const query = useTransactionDecision(client, transaction.id);
+  const decision = query.data?.latest ?? null;
+
+  if (query.isLoading) {
+    return <section className="h-52 animate-pulse rounded-md border border-border bg-surface" />;
+  }
+
+  if (query.error || !decision) {
+    return (
+      <section className="rounded-md border border-border bg-surface">
+        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+          <BrainCircuit className="h-4 w-4 text-muted-foreground" />
+          <h2 className="font-display text-base font-semibold">Decision Summary</h2>
+        </div>
+        <div className="p-4 text-sm text-muted-foreground">
+          No persisted decision is available for this transaction yet.
+        </div>
+      </section>
+    );
+  }
+
+  const severity = getSeverityConfig(decision.riskLevel);
+
+  return (
+    <div className="space-y-3">
+      <section className={cn('rounded-md border bg-surface', severity.borderClassName)}>
+        <div className={cn('border-b px-4 py-3', severity.borderClassName, severity.bgClassName)}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <BrainCircuit className={cn('h-4 w-4', severity.className)} />
+              <h2 className="font-display text-base font-semibold">Decision Summary</h2>
+            </div>
+            <DecisionBadge decision={decision} />
+          </div>
+        </div>
+        <div className="grid gap-3 p-4 md:grid-cols-2 xl:grid-cols-4">
+          <InfoField label="Final Score" mono value={formatScore(decision.finalScore)} />
+          <InfoField label="Confidence" mono value={`${formatScore(decision.confidence)}%`} />
+          <InfoField label="Recommendation" mono value={recommendationLabel(decision.recommendation)} />
+          <InfoField label="Decision Time" mono value={formatDate(decision.processedAt)} />
+          <InfoField label="Strategy" mono value={decision.decisionStrategy} />
+          <InfoField label="Rule Score" mono value={formatScore(decision.ruleScore)} />
+          <InfoField label="ML Score" mono value={formatScore(decision.mlScore)} />
+          <InfoField label="Triggered Rules" mono value={decision.explanation.ruleBreakdown.triggeredRules.length} />
+        </div>
+        <div className="border-t border-border p-4">
+          <p className="text-sm text-foreground">{decision.explanation.summary}</p>
+          <div className="mt-3 grid gap-2">
+            {decision.explanation.reasons.map((reason, index) => (
+              <p key={`${reason}-${index}`} className="text-sm text-muted-foreground">{reason}</p>
+            ))}
+          </div>
+          <p className="mt-3 text-sm text-foreground">{decision.explanation.recommendationReason}</p>
+        </div>
+        <div className="border-t border-border p-4">
+          <DecisionTimeline decision={decision} />
+        </div>
+      </section>
+      <DecisionDetailsSection decision={decision} />
+    </div>
+  );
+}
+
 export function MetadataViewer({ value }: { value?: Record<string, unknown> | null }) {
   const [expanded, setExpanded] = React.useState(true);
   const json = JSON.stringify(value ?? {}, null, 2);
@@ -512,7 +673,13 @@ export function MetadataViewer({ value }: { value?: Record<string, unknown> | nu
   );
 }
 
-export function TransactionDetails({ transaction }: { transaction: Transaction }) {
+export function TransactionDetails({
+  transaction,
+  client,
+}: {
+  transaction: Transaction;
+  client?: AxiosInstance;
+}) {
   const uploadedBy = transaction.upload?.uploadedBy;
   const uploadedByLabel = uploadedBy ? `${uploadedBy.firstName ?? ''} ${uploadedBy.lastName ?? ''}`.trim() || uploadedBy.email : '-';
 
@@ -549,6 +716,7 @@ export function TransactionDetails({ transaction }: { transaction: Transaction }
         <InfoField label="Organization" value={transaction.upload?.organization?.name} />
         <InfoField label="CSV Row" mono value={sourceRow(transaction)} />
       </section>
+      <DecisionSummaryCard client={client} transaction={transaction} />
       <AiAnalysisCard transaction={transaction} />
       <MetadataViewer value={transaction.metadata} />
     </div>
@@ -581,7 +749,7 @@ export function TransactionDrawer({
       <div className="h-[calc(100vh-3.5rem)] overflow-y-auto p-4">
         {query.isLoading ? <div className="h-40 animate-pulse rounded-md bg-surface" /> : null}
         {query.error ? <p className="rounded-md border border-border bg-surface p-4 text-sm text-muted-foreground">Unable to load this transaction.</p> : null}
-        {query.data ? <TransactionDetails transaction={query.data} /> : null}
+        {query.data ? <TransactionDetails client={client} transaction={query.data} /> : null}
       </div>
     </aside>
   );

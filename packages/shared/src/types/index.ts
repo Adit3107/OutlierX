@@ -3,6 +3,8 @@ import type {
   ALERT_SEVERITIES,
   API_KEY_STATUSES,
   CONDITION_OPERATORS,
+  DECISION_RECOMMENDATIONS,
+  DECISION_STRATEGIES,
   LOGICAL_OPERATORS,
   MEMBERSHIP_STATUSES,
   PERMISSIONS,
@@ -31,6 +33,9 @@ export type RuleSeverity = AlertSeverity;
 export type ConditionOperator = (typeof CONDITION_OPERATORS)[keyof typeof CONDITION_OPERATORS];
 export type LogicalOperator = (typeof LOGICAL_OPERATORS)[keyof typeof LOGICAL_OPERATORS];
 export type RiskLevel = (typeof RISK_LEVELS)[keyof typeof RISK_LEVELS];
+export type DecisionRecommendation =
+  (typeof DECISION_RECOMMENDATIONS)[keyof typeof DECISION_RECOMMENDATIONS];
+export type DecisionStrategy = (typeof DECISION_STRATEGIES)[keyof typeof DECISION_STRATEGIES];
 export type RuleExecutionSource =
   (typeof RULE_EXECUTION_SOURCES)[keyof typeof RULE_EXECUTION_SOURCES];
 export type ApiDate = string | Date;
@@ -277,6 +282,83 @@ export interface RuleEvaluationResponse {
   triggeredRules: RuleResult[];
   results: RuleResult[];
   executionTimeMs: number;
+}
+
+export interface DecisionSignalBreakdown {
+  name: string;
+  label: string;
+  score: number;
+  weight: number;
+  weightedScore: number;
+  confidence?: number;
+}
+
+export interface DecisionTimelineItem {
+  label: string;
+  status: 'COMPLETED' | 'SKIPPED' | 'FAILED';
+  timestamp?: ApiDate | null;
+  description: string;
+}
+
+export interface DecisionExplanation {
+  summary: string;
+  reasons: string[];
+  recommendationReason: string;
+  ruleBreakdown: {
+    executionId?: string | null;
+    score: number;
+    riskLevel?: RiskLevel | null;
+    triggeredRules: RuleResult[];
+    executionTimeMs?: number | null;
+  };
+  mlBreakdown: {
+    predictionId?: string | null;
+    prediction: string;
+    score: number;
+    confidence: number;
+    modelVersion?: string | null;
+    processingTime?: number | null;
+  };
+  weights: DecisionSignalBreakdown[];
+  thresholds: {
+    risk: Record<RiskLevel, { min: number; max: number }>;
+    recommendations: Record<DecisionRecommendation, { min: number; max: number }>;
+  };
+  consistency: number;
+  timeline: DecisionTimelineItem[];
+  processingTime: number;
+}
+
+export interface Decision {
+  id: string;
+  organizationId: string;
+  transactionId: string;
+  ruleExecutionId?: string | null;
+  mlPredictionId?: string | null;
+  ruleScore: number;
+  mlScore: number;
+  finalScore: number;
+  confidence: number;
+  riskLevel: RiskLevel;
+  decisionStrategy: string;
+  decisionVersion: string;
+  explanation: DecisionExplanation;
+  recommendation: DecisionRecommendation;
+  processedAt: ApiDate;
+  createdAt: ApiDate;
+  updatedAt: ApiDate;
+}
+
+export interface DecisionRecalculateResult {
+  transactionId: string;
+  status: 'CREATED' | 'FAILED';
+  decision?: Decision;
+  error?: string;
+}
+
+export interface DecisionTransactionSummary {
+  latest: Decision | null;
+  history: Decision[];
 }
 
 export interface ApiFailure {

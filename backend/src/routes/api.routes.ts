@@ -11,6 +11,7 @@ import {
 import { TransactionController, UploadController } from '../controllers/transaction.controller.js';
 import { PredictionController } from '../controllers/prediction.controller.js';
 import { RuleController } from '../modules/rules/controllers/rule.controller.js';
+import { DecisionController } from '../modules/decision-engine/controllers/decision.controller.js';
 import { requireAuth, requirePermission } from '../middlewares/auth.middleware.js';
 import { uploadCsvMiddleware } from '../middlewares/upload.middleware.js';
 import { validateBody, validateParams, validateQuery } from '../middlewares/validation.middleware.js';
@@ -56,6 +57,11 @@ import {
   ruleUpdateValidator,
 } from '../modules/rules/validators/rule.validator.js';
 import {
+  decisionQueryValidator,
+  decisionRecalculateValidator,
+  decisionTestValidator,
+} from '../modules/decision-engine/validators/decision.validator.js';
+import {
   CsvParserService,
   CsvValidationService,
   TransactionPersistenceService,
@@ -69,6 +75,8 @@ import { RuleRepository } from '../modules/rules/repositories/rule.repository.js
 import { RuleEngineService } from '../modules/rules/services/rule-engine.service.js';
 import { ExecutionRecorder } from '../modules/rules/services/execution-recorder.js';
 import { RuleService } from '../modules/rules/services/rule.service.js';
+import { DecisionRepository } from '../modules/decision-engine/repositories/decision.repository.js';
+import { DecisionService } from '../modules/decision-engine/services/decision.service.js';
 
 const apiRouter = Router();
 
@@ -100,6 +108,7 @@ const ruleService = new RuleService(
   new ExecutionRecorder(ruleRepository),
   activityService
 );
+const decisionService = new DecisionService(new DecisionRepository(), activityService);
 const transactionPersistenceService = new TransactionPersistenceService(transactionRepository);
 const csvParserService = new CsvParserService(
   new CsvValidationService(),
@@ -114,7 +123,8 @@ const uploadController = new UploadController(
     activityService,
     transactionRepository,
     ruleService,
-    predictionService
+    predictionService,
+    decisionService
   )
 );
 const transactionController = new TransactionController(
@@ -122,6 +132,7 @@ const transactionController = new TransactionController(
 );
 const predictionController = new PredictionController(predictionService);
 const ruleController = new RuleController(ruleService);
+const decisionController = new DecisionController(decisionService);
 
 apiRouter.get('/health', healthController.getHealth);
 apiRouter.get('/status', healthController.getStatus);
@@ -188,6 +199,31 @@ apiRouter.get(
   requirePermission(PERMISSIONS.ACTIVITY_READ),
   validateQuery(paginationQueryValidator),
   activityController.list
+);
+
+apiRouter.get(
+  '/decisions',
+  requirePermission(PERMISSIONS.DECISIONS_READ),
+  validateQuery(decisionQueryValidator),
+  decisionController.list
+);
+apiRouter.post(
+  '/decisions/recalculate',
+  requirePermission(PERMISSIONS.DECISIONS_WRITE),
+  validateBody(decisionRecalculateValidator),
+  decisionController.recalculate
+);
+apiRouter.post(
+  '/decisions/test',
+  requirePermission(PERMISSIONS.DECISIONS_WRITE),
+  validateBody(decisionTestValidator),
+  decisionController.test
+);
+apiRouter.get(
+  '/decisions/:id',
+  requirePermission(PERMISSIONS.DECISIONS_READ),
+  validateParams(idParamsValidator),
+  decisionController.getById
 );
 
 apiRouter.get(
@@ -307,16 +343,22 @@ apiRouter.post(
   transactionController.bulkAction
 );
 apiRouter.get(
-  '/transactions/:id',
-  requirePermission(PERMISSIONS.TRANSACTIONS_READ),
+  '/transactions/:id/decision',
+  requirePermission(PERMISSIONS.DECISIONS_READ),
   validateParams(idParamsValidator),
-  transactionController.getById
+  decisionController.getTransactionDecision
 );
 apiRouter.post(
   '/transactions/:id/ml-prediction',
   requirePermission(PERMISSIONS.TRANSACTIONS_READ),
   validateParams(idParamsValidator),
   predictionController.predictTransaction
+);
+apiRouter.get(
+  '/transactions/:id',
+  requirePermission(PERMISSIONS.TRANSACTIONS_READ),
+  validateParams(idParamsValidator),
+  transactionController.getById
 );
 apiRouter.delete(
   '/transactions/:id',

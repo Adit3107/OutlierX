@@ -72,7 +72,9 @@ function TransactionDetailPageContent({ transactionId }: { transactionId: string
             </p>
           </section>
         ) : null}
-        {transactionQuery.data ? <TransactionDetails transaction={transactionQuery.data} /> : null}
+        {transactionQuery.data ? (
+          <TransactionDetails client={client} transaction={transactionQuery.data} />
+        ) : null}
       </div>
     </main>
   );

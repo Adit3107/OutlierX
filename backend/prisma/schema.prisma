@@ -108,6 +108,14 @@ enum RiskLevel {
   CRITICAL
 }
 
+enum DecisionRecommendation {
+  APPROVE
+  MONITOR
+  MANUAL_REVIEW
+  BLOCK_TRANSACTION
+  ESCALATE
+}
+
 enum RuleExecutionSource {
   UPLOAD
   MANUAL
@@ -175,6 +183,7 @@ model Organization {
   rules        Rule[]
   ruleExecutions RuleExecution[]
   mlPredictions MlPrediction[]
+  decisions Decision[]
   activityLogs ActivityLog[]
 
   @@index([subscriptionPlan])
@@ -284,6 +293,7 @@ model Transaction {
   upload       Upload       @relation(fields: [uploadId], references: [id], onDelete: Cascade)
   ruleExecutions RuleExecution[]
   mlPrediction MlPrediction?
+  decisions Decision[]
 
   @@index([organizationId])
   @@index([transactionId])
@@ -315,6 +325,7 @@ model MlPrediction {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   transaction  Transaction  @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  decisions Decision[]
 
   @@index([organizationId])
   @@index([transactionId])
@@ -410,6 +421,7 @@ model RuleExecution {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   transaction  Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   results      RuleResult[]
+  decisions Decision[]
 
   @@index([organizationId])
   @@index([transactionId])
@@ -436,6 +448,43 @@ model RuleResult {
   @@index([ruleId])
   @@index([matched])
   @@index([createdAt])
+}
+
+model Decision {
+  id                String                 @id @default(uuid())
+  organizationId    String
+  transactionId     String
+  ruleExecutionId   String?
+  mlPredictionId    String?
+  ruleScore         Float
+  mlScore           Float
+  finalScore        Float
+  confidence        Float
+  riskLevel         RiskLevel
+  decisionStrategy  String
+  decisionVersion   String
+  explanation       Json
+  recommendation    DecisionRecommendation
+  processedAt       DateTime
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transaction   Transaction    @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  ruleExecution RuleExecution? @relation(fields: [ruleExecutionId], references: [id], onDelete: SetNull)
+  mlPrediction  MlPrediction?  @relation(fields: [mlPredictionId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@index([transactionId])
+  @@index([ruleExecutionId])
+  @@index([mlPredictionId])
+  @@index([riskLevel])
+  @@index([recommendation])
+  @@index([decisionStrategy])
+  @@index([processedAt])
+  @@index([createdAt])
+  @@index([organizationId, processedAt])
+  @@index([organizationId, transactionId, processedAt])
 }
 
 model Alert {

@@ -58,6 +58,50 @@ export const ALERT_SEVERITIES = {
   CRITICAL: 'CRITICAL',
 } as const;
 
+export const RULE_CATEGORIES = {
+  AMOUNT: 'AMOUNT',
+  LOCATION: 'LOCATION',
+  MERCHANT: 'MERCHANT',
+  TIME: 'TIME',
+  ACCOUNT: 'ACCOUNT',
+  DEVICE: 'DEVICE',
+  CUSTOM: 'CUSTOM',
+} as const;
+
+export const CONDITION_OPERATORS = {
+  EQ: 'EQ',
+  NEQ: 'NEQ',
+  GT: 'GT',
+  GTE: 'GTE',
+  LT: 'LT',
+  LTE: 'LTE',
+  CONTAINS: 'CONTAINS',
+  NOT_CONTAINS: 'NOT_CONTAINS',
+  IN: 'IN',
+  NOT_IN: 'NOT_IN',
+  EXISTS: 'EXISTS',
+  MISSING: 'MISSING',
+  BETWEEN: 'BETWEEN',
+} as const;
+
+export const LOGICAL_OPERATORS = {
+  AND: 'AND',
+  OR: 'OR',
+} as const;
+
+export const RISK_LEVELS = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
+  CRITICAL: 'CRITICAL',
+} as const;
+
+export const RULE_EXECUTION_SOURCES = {
+  UPLOAD: 'UPLOAD',
+  MANUAL: 'MANUAL',
+  PLAYGROUND: 'PLAYGROUND',
+} as const;
+
 export const ACTIVITY_ENTITIES = {
   USER: 'USER',
   ORGANIZATION: 'ORGANIZATION',
@@ -65,6 +109,7 @@ export const ACTIVITY_ENTITIES = {
   API_KEY: 'API_KEY',
   UPLOAD: 'UPLOAD',
   TRANSACTION: 'TRANSACTION',
+  RULE: 'RULE',
   ALERT: 'ALERT',
   SYSTEM: 'SYSTEM',
 } as const;
@@ -84,6 +129,12 @@ export const PERMISSIONS = {
   UPLOADS_DELETE: 'uploads:delete',
   TRANSACTIONS_READ: 'transactions:read',
   TRANSACTIONS_DELETE: 'transactions:delete',
+  RULES_READ: 'rules:read',
+  RULES_TEST: 'rules:test',
+  RULES_CREATE: 'rules:create',
+  RULES_UPDATE: 'rules:update',
+  RULES_DELETE: 'rules:delete',
+  RULES_EVALUATE: 'rules:evaluate',
   ACTIVITY_READ: 'activity:read',
 } as const;
 

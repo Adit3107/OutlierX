@@ -68,7 +68,7 @@ Storage:
 
 ## Transaction Investigation
 
-The investigation module lets analysts explore imported transactions without anomaly detection, rule scoring, ML predictions, risk levels, or severity indicators. It is an organization-scoped console for search, filtering, traceability, export, and record inspection.
+The investigation module lets analysts explore imported transactions without ML predictions. It is an organization-scoped console for search, filtering, traceability, export, and record inspection; deterministic rule scoring is handled by the separate rule engine.
 
 Architecture:
 
@@ -103,6 +103,44 @@ Export and bulk actions:
 - Export scopes are current page, filtered results, and selected rows.
 - Admin/owner users can bulk delete transactions through `transactions:delete`.
 - Bulk tag and bulk mark reviewed are placeholders that log audit events but do not mutate transaction records.
+
+## Rule Engine
+
+The rule engine evaluates transactions with deterministic, explainable rules. It does not call the Python ML service and does not use machine learning. Future ML scores can be merged later without changing the rule engine boundary.
+
+Architecture:
+
+- Backend rule code lives under `backend/src/modules/rules`.
+- Controllers are transport-only and delegate to services.
+- `RuleEngineService`, `RuleEvaluator`, `ConditionEvaluator`, `ScoreCalculator`, `ExplanationGenerator`, and `ExecutionRecorder` are isolated from Express.
+- Prisma stores `Rule`, `RuleGroup`, `RuleCondition`, `RuleExecution`, and `RuleResult`.
+- Nested conditions are persisted relationally but exposed to the frontend as a JSON condition tree.
+
+Execution flow:
+
+1. Enabled organization rules are loaded in priority order.
+2. Each transaction is evaluated against every enabled rule.
+3. Matching rules contribute their configured weight.
+4. Total score is clamped to `0-100`.
+5. Risk level is assigned as `LOW` `0-24`, `MEDIUM` `25-49`, `HIGH` `50-79`, and `CRITICAL` `80-100`.
+6. Execution history and per-rule results are stored for persisted transaction evaluations.
+
+Rules support configurable categories, severity, priority, weight, enabled state, nested `AND`/`OR` groups, and operators such as equality, comparisons, contains, list membership, missing/existence, and between.
+
+Default rules are provisioned for the seeded demo organization and for new first-sign-in organizations. They include large transaction, foreign country, high-risk merchant, weekend/night activity, missing reference, duplicate/velocity placeholders, international transfer, and blacklist placeholder rules.
+
+Frontend:
+
+- `/rules` lists rules with search, filters, sorting, status toggles, duplicate, and delete actions.
+- `/rules/new` provides a visual rule builder for conditions, groups, thresholds, priority, weight, and enabled state.
+- `/rules/[id]` shows configuration, conditions, recent execution history, and edit/duplicate/delete actions.
+- `/rules/playground` accepts pasted transaction JSON and returns triggered rules, score, risk level, explanations, and the raw evaluation result without creating transaction records.
+
+Permissions:
+
+- OWNER and ADMIN can create, update, delete, duplicate, reorder, enable, disable, test, and evaluate rules.
+- ANALYST can read and test rules.
+- VIEWER can read rules only.
 
 ## Authentication Flow
 

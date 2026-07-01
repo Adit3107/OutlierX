@@ -12,6 +12,7 @@ import { ActivityService } from './foundation.service.js';
 import { CsvParserService } from './csv-ingestion.service.js';
 import { StorageProvider } from './storage.service.js';
 import { BadRequestError, ConflictError, NotFoundError } from '../utils/errors.js';
+import { RuleService } from '../modules/rules/services/rule.service.js';
 
 function toUpload(upload: Awaited<ReturnType<UploadRepository['create']>>): Upload {
   return {
@@ -161,7 +162,9 @@ export class UploadService {
     private uploadRepository: UploadRepository,
     private parserService: CsvParserService,
     private storageProvider: StorageProvider,
-    private activityService: ActivityService
+    private activityService: ActivityService,
+    private transactionRepository: TransactionRepository,
+    private ruleService?: RuleService
   ) {}
 
   async uploadCsv(input: {
@@ -248,6 +251,38 @@ export class UploadService {
           failedRows: uploadRecord.failedRows,
         },
       });
+
+      if (this.ruleService && uploadRecord.processedRows > 0) {
+        try {
+          const transactions = await this.transactionRepository.listAllByUpload(
+            input.organizationId,
+            uploadRecord.id
+          );
+          if (transactions.length > 0) {
+            await this.ruleService.evaluateTransactions(input.organizationId, transactions, 'UPLOAD');
+            await this.activityService.log({
+              organizationId: input.organizationId,
+              userId: input.userId,
+              action: 'rule.executed',
+              entity: 'RULE',
+              entityId: uploadRecord.id,
+              metadata: { source: 'UPLOAD', count: transactions.length },
+            });
+          }
+        } catch (ruleError) {
+          await this.activityService.log({
+            organizationId: input.organizationId,
+            userId: input.userId,
+            action: 'rule.execution_failed',
+            entity: 'RULE',
+            entityId: uploadRecord.id,
+            metadata: {
+              source: 'UPLOAD',
+              reason: ruleError instanceof Error ? ruleError.message : 'Rule evaluation failed',
+            },
+          });
+        }
+      }
 
       return {
         upload: toUpload(uploadRecord),

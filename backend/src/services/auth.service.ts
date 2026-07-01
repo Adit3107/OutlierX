@@ -3,6 +3,8 @@ import { User } from '@clerk/backend';
 import { getPermissionsForRole } from '../config/permissions.js';
 import { ConflictError, InternalServerError, UnauthorizedError } from '../utils/errors.js';
 import { AuthRepository } from '../repositories/auth.repository.js';
+import { DEFAULT_RULES } from '../modules/rules/constants/default-rules.js';
+import { RuleRepository } from '../modules/rules/repositories/rule.repository.js';
 
 export interface ClerkProfile {
   clerkUserId: string;
@@ -43,7 +45,10 @@ export function mapClerkUserToProfile(clerkUser: User, clerkUserId: string): Cle
 }
 
 export class AuthService {
-  constructor(private authRepository: AuthRepository) {}
+  constructor(
+    private authRepository: AuthRepository,
+    private ruleRepository: RuleRepository = new RuleRepository()
+  ) {}
 
   async syncAuthenticatedUser(profile: ClerkProfile): Promise<AuthContext> {
     const existingEmailUser = await this.authRepository.findUserByEmail(profile.email);
@@ -70,6 +75,7 @@ export class AuthService {
     if (!membership) {
       organization = await this.createPersonalOrganization(profile);
       membership = await this.authRepository.upsertOwnerMembership(user.id, organization.id);
+      await this.ruleRepository.provisionDefaults(organization.id, user.id, DEFAULT_RULES);
       await this.authRepository.updateCurrentOrganization(user.id, organization.id);
       hydratedUser = await this.authRepository.findUserByClerkId(profile.clerkUserId);
     } else if (!hydratedUser.currentOrganizationId) {

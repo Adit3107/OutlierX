@@ -70,6 +70,50 @@ enum AlertSeverity {
   CRITICAL
 }
 
+enum RuleCategory {
+  AMOUNT
+  LOCATION
+  MERCHANT
+  TIME
+  ACCOUNT
+  DEVICE
+  CUSTOM
+}
+
+enum ConditionOperator {
+  EQ
+  NEQ
+  GT
+  GTE
+  LT
+  LTE
+  CONTAINS
+  NOT_CONTAINS
+  IN
+  NOT_IN
+  EXISTS
+  MISSING
+  BETWEEN
+}
+
+enum LogicalOperator {
+  AND
+  OR
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RuleExecutionSource {
+  UPLOAD
+  MANUAL
+  PLAYGROUND
+}
+
 enum ActivityEntity {
   USER
   ORGANIZATION
@@ -77,6 +121,7 @@ enum ActivityEntity {
   API_KEY
   UPLOAD
   TRANSACTION
+  RULE
   ALERT
   SYSTEM
 }
@@ -99,6 +144,7 @@ model User {
   apiKeys             ApiKey[]
   alerts              Alert[]
   activityLogs        ActivityLog[]
+  createdRules        Rule[]
 
   @@index([email])
   @@index([clerkUserId])
@@ -126,6 +172,8 @@ model Organization {
   transactions Transaction[]
   apiKeys      ApiKey[]
   alerts       Alert[]
+  rules        Rule[]
+  ruleExecutions RuleExecution[]
   activityLogs ActivityLog[]
 
   @@index([subscriptionPlan])
@@ -233,6 +281,7 @@ model Transaction {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   upload       Upload       @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  ruleExecutions RuleExecution[]
 
   @@index([organizationId])
   @@index([transactionId])
@@ -247,6 +296,120 @@ model Transaction {
   @@index([organizationId, country])
   @@index([organizationId, currency])
   @@index([organizationId, status])
+}
+
+model Rule {
+  id             String        @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  category       RuleCategory
+  severity       AlertSeverity
+  enabled        Boolean       @default(true)
+  priority       Int
+  weight         Int
+  createdBy      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  creator      User?        @relation(fields: [createdBy], references: [id], onDelete: SetNull)
+  groups       RuleGroup[]
+  conditions   RuleCondition[]
+  results      RuleResult[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+  @@index([createdBy])
+  @@index([category])
+  @@index([severity])
+  @@index([enabled])
+  @@index([priority])
+  @@index([updatedAt])
+  @@index([organizationId, enabled, priority])
+}
+
+model RuleGroup {
+  id             String          @id @default(uuid())
+  ruleId         String
+  parentGroupId  String?
+  operator       LogicalOperator @default(AND)
+  position       Int             @default(0)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  rule         Rule            @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  parentGroup  RuleGroup?      @relation("NestedRuleGroups", fields: [parentGroupId], references: [id], onDelete: Cascade)
+  childGroups  RuleGroup[]     @relation("NestedRuleGroups")
+  conditions   RuleCondition[]
+
+  @@index([ruleId])
+  @@index([parentGroupId])
+  @@index([ruleId, parentGroupId])
+}
+
+model RuleCondition {
+  id        String            @id @default(uuid())
+  ruleId    String
+  groupId   String
+  field     String
+  operator  ConditionOperator
+  value     Json?
+  dataType  String
+  position  Int               @default(0)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  rule  Rule      @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  group RuleGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([ruleId])
+  @@index([groupId])
+  @@index([field])
+  @@index([ruleId, groupId])
+}
+
+model RuleExecution {
+  id              String              @id @default(uuid())
+  organizationId  String
+  transactionId   String?
+  source          RuleExecutionSource
+  finalScore      Int
+  riskLevel       RiskLevel
+  executionTimeMs Int
+  triggeredCount  Int                 @default(0)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transaction  Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  results      RuleResult[]
+
+  @@index([organizationId])
+  @@index([transactionId])
+  @@index([source])
+  @@index([riskLevel])
+  @@index([createdAt])
+  @@index([organizationId, createdAt])
+}
+
+model RuleResult {
+  id          String        @id @default(uuid())
+  executionId String
+  ruleId      String
+  matched     Boolean
+  score       Int
+  explanation String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  execution RuleExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  rule      Rule          @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@index([executionId])
+  @@index([ruleId])
+  @@index([matched])
+  @@index([createdAt])
 }
 
 model Alert {

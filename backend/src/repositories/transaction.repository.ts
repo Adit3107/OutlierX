@@ -252,4 +252,11 @@ export class TransactionRepository {
       this.db.transaction.count({ where }),
     ]);
   }
+
+  listAllByUpload(organizationId: string, uploadId: string) {
+    return this.db.transaction.findMany({
+      where: { organizationId, uploadId },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
 }

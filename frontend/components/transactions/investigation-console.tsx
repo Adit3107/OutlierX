@@ -18,6 +18,7 @@ import {
   Download,
   ExternalLink,
   Filter,
+  GitBranch,
   Moon,
   PanelRightClose,
   RefreshCw,
@@ -668,6 +669,9 @@ function InvestigationSidebar() {
         </Link>
         <Link className="flex h-9 items-center gap-2 rounded-md border border-border bg-surface-alt px-2 text-sm text-foreground" href="/transactions">
           <WalletCards className="h-4 w-4 text-primary" /> Transactions
+        </Link>
+        <Link className="flex h-9 items-center gap-2 rounded-md px-2 text-sm text-muted-foreground hover:bg-surface hover:text-foreground" href="/rules">
+          <GitBranch className="h-4 w-4" /> Rules
         </Link>
       </nav>
     </aside>

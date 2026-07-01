@@ -1,7 +1,68 @@
 import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
+import { DEFAULT_RULES } from '../src/modules/rules/constants/default-rules.js';
 
 const prisma = new PrismaClient();
+
+async function createRuleGroup(ruleId: string, group: any, parentGroupId: string | null, position: number) {
+  const created = await prisma.ruleGroup.create({
+    data: {
+      ruleId,
+      parentGroupId,
+      operator: group.operator,
+      position,
+    },
+  });
+
+  for (const [index, child] of group.children.entries()) {
+    const childPosition = child.position ?? index;
+    if (child.type === 'group') {
+      await createRuleGroup(ruleId, child, created.id, childPosition);
+    } else {
+      await prisma.ruleCondition.create({
+        data: {
+          ruleId,
+          groupId: created.id,
+          field: child.field,
+          operator: child.operator,
+          value: child.value,
+          dataType: child.dataType,
+          position: childPosition,
+        },
+      });
+    }
+  }
+}
+
+async function seedDefaultRules(organizationId: string, userId: string) {
+  for (const definition of DEFAULT_RULES) {
+    const existing = await prisma.rule.findUnique({
+      where: {
+        organizationId_name: {
+          organizationId,
+          name: definition.name,
+        },
+      },
+    });
+
+    if (!existing) {
+      const rule = await prisma.rule.create({
+        data: {
+          organizationId,
+          createdBy: userId,
+          name: definition.name,
+          description: definition.description,
+          category: definition.category,
+          severity: definition.severity,
+          enabled: definition.enabled,
+          priority: definition.priority,
+          weight: definition.weight,
+        },
+      });
+      await createRuleGroup(rule.id, definition.conditionTree, null, 0);
+    }
+  }
+}
 
 async function main() {
   console.log('Database seeding initiated...');
@@ -145,6 +206,8 @@ async function main() {
       metadata: { source: 'seed', role: membership.role },
     },
   });
+
+  await seedDefaultRules(organization.id, user.id);
 
   console.log('Seeding completed successfully.');
 }

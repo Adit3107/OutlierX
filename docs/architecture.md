@@ -44,3 +44,16 @@ graph TD
 3. **Validation at Boundaries**: Request inputs are validated at route borders using Zod schemas imported from `@anomaly/shared`.
 4. **Single Source of Truth**: Shared properties, schemas, and helpers reside inside the `@anomaly/shared` folder, preventing duplicate representations and interface mismatches.
 5. **Dependency Injection**: Services receive repositories through constructor injectors, facilitating test mock swaps.
+
+---
+
+## Deterministic Rule Engine
+
+OutlierX includes a dedicated rule module at `backend/src/modules/rules` for explainable fraud scoring. The module is isolated from Express transport concerns:
+
+- Controllers validate authenticated HTTP requests and delegate to services.
+- Services coordinate rule CRUD, audit logging, execution recording, and default-rule provisioning.
+- Engine classes evaluate condition trees, calculate scores, and generate human-readable explanations without importing API types.
+- Repositories contain Prisma access for `Rule`, `RuleGroup`, `RuleCondition`, `RuleExecution`, and `RuleResult`.
+
+Rules are organization-scoped, configurable, and deterministic. They support nested `AND`/`OR` condition groups and produce a `0-100` rule score with `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL` risk levels. CSV uploads trigger rule evaluation after successful transaction persistence, while `/rules/test` supports playground evaluation without storing transaction records.

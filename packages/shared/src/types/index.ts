@@ -2,8 +2,13 @@ import type {
   ACTIVITY_ENTITIES,
   ALERT_SEVERITIES,
   API_KEY_STATUSES,
+  CONDITION_OPERATORS,
+  LOGICAL_OPERATORS,
   MEMBERSHIP_STATUSES,
   PERMISSIONS,
+  RISK_LEVELS,
+  RULE_CATEGORIES,
+  RULE_EXECUTION_SOURCES,
   SUBSCRIPTION_PLANS,
   SUBSCRIPTION_STATUSES,
   USER_ROLES,
@@ -21,6 +26,13 @@ export type AlertSeverity = (typeof ALERT_SEVERITIES)[keyof typeof ALERT_SEVERIT
 export type ActivityEntity = (typeof ACTIVITY_ENTITIES)[keyof typeof ACTIVITY_ENTITIES];
 export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 export type UploadStatus = (typeof UPLOAD_STATUSES)[keyof typeof UPLOAD_STATUSES];
+export type RuleCategory = (typeof RULE_CATEGORIES)[keyof typeof RULE_CATEGORIES];
+export type RuleSeverity = AlertSeverity;
+export type ConditionOperator = (typeof CONDITION_OPERATORS)[keyof typeof CONDITION_OPERATORS];
+export type LogicalOperator = (typeof LOGICAL_OPERATORS)[keyof typeof LOGICAL_OPERATORS];
+export type RiskLevel = (typeof RISK_LEVELS)[keyof typeof RISK_LEVELS];
+export type RuleExecutionSource =
+  (typeof RULE_EXECUTION_SOURCES)[keyof typeof RULE_EXECUTION_SOURCES];
 export type ApiDate = string | Date;
 
 export interface User {
@@ -180,6 +192,77 @@ export interface DetectionRule {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface RuleConditionNode {
+  type: 'condition';
+  id?: string;
+  field: string;
+  operator: ConditionOperator;
+  value?: unknown;
+  dataType: 'string' | 'number' | 'date' | 'boolean' | 'array';
+  position?: number;
+}
+
+export interface RuleGroupNode {
+  type: 'group';
+  id?: string;
+  operator: LogicalOperator;
+  position?: number;
+  children: RuleTreeNode[];
+}
+
+export type RuleTreeNode = RuleConditionNode | RuleGroupNode;
+
+export interface Rule {
+  id: string;
+  organizationId: string;
+  name: string;
+  description?: string | null;
+  category: RuleCategory;
+  severity: RuleSeverity;
+  enabled: boolean;
+  priority: number;
+  weight: number;
+  createdBy?: string | null;
+  createdAt: ApiDate;
+  updatedAt: ApiDate;
+  conditionTree: RuleGroupNode;
+  createdByUser?: Pick<User, 'id' | 'email' | 'firstName' | 'lastName'> | null;
+}
+
+export interface RuleResult {
+  id?: string;
+  ruleId: string;
+  ruleName: string;
+  category: RuleCategory;
+  severity: RuleSeverity;
+  matched: boolean;
+  score: number;
+  explanation: string;
+}
+
+export interface RuleExecution {
+  id: string;
+  organizationId: string;
+  transactionId?: string | null;
+  source: RuleExecutionSource;
+  finalScore: number;
+  riskLevel: RiskLevel;
+  executionTimeMs: number;
+  triggeredCount: number;
+  createdAt: ApiDate;
+  transaction?: Pick<Transaction, 'id' | 'transactionId' | 'merchant' | 'amount' | 'currency'> | null;
+  results?: RuleResult[];
+}
+
+export interface RuleEvaluationResponse {
+  executionId?: string;
+  finalScore: number;
+  riskLevel: RiskLevel;
+  triggeredRules: RuleResult[];
+  results: RuleResult[];
+  executionTimeMs: number;
 }
 
 export interface ApiFailure {

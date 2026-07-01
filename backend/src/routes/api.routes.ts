@@ -9,6 +9,7 @@ import {
   OrganizationController,
 } from '../controllers/foundation.controller.js';
 import { TransactionController, UploadController } from '../controllers/transaction.controller.js';
+import { RuleController } from '../modules/rules/controllers/rule.controller.js';
 import { requireAuth, requirePermission } from '../middlewares/auth.middleware.js';
 import { uploadCsvMiddleware } from '../middlewares/upload.middleware.js';
 import { validateBody, validateParams, validateQuery } from '../middlewares/validation.middleware.js';
@@ -45,12 +46,25 @@ import {
   queryTransactionsValidator,
 } from '../validators/transaction.validator.js';
 import {
+  ruleCreateValidator,
+  ruleEvaluateValidator,
+  ruleHistoryQueryValidator,
+  ruleQueryValidator,
+  ruleReorderValidator,
+  ruleTestValidator,
+  ruleUpdateValidator,
+} from '../modules/rules/validators/rule.validator.js';
+import {
   CsvParserService,
   CsvValidationService,
   TransactionPersistenceService,
 } from '../services/csv-ingestion.service.js';
 import { TransactionService, UploadService } from '../services/transaction.service.js';
 import { createStorageProvider } from '../services/storage.service.js';
+import { RuleRepository } from '../modules/rules/repositories/rule.repository.js';
+import { RuleEngineService } from '../modules/rules/services/rule-engine.service.js';
+import { ExecutionRecorder } from '../modules/rules/services/execution-recorder.js';
+import { RuleService } from '../modules/rules/services/rule.service.js';
 
 const apiRouter = Router();
 
@@ -70,6 +84,13 @@ const apiKeyController = new ApiKeyController(
 const activityController = new ActivityController(activityService);
 const uploadRepository = new UploadRepository();
 const transactionRepository = new TransactionRepository();
+const ruleRepository = new RuleRepository();
+const ruleService = new RuleService(
+  ruleRepository,
+  new RuleEngineService(),
+  new ExecutionRecorder(ruleRepository),
+  activityService
+);
 const transactionPersistenceService = new TransactionPersistenceService(transactionRepository);
 const csvParserService = new CsvParserService(
   new CsvValidationService(),
@@ -77,11 +98,19 @@ const csvParserService = new CsvParserService(
 );
 const storageProvider = createStorageProvider();
 const uploadController = new UploadController(
-  new UploadService(uploadRepository, csvParserService, storageProvider, activityService)
+  new UploadService(
+    uploadRepository,
+    csvParserService,
+    storageProvider,
+    activityService,
+    transactionRepository,
+    ruleService
+  )
 );
 const transactionController = new TransactionController(
   new TransactionService(transactionRepository, uploadRepository, activityService)
 );
+const ruleController = new RuleController(ruleService);
 
 apiRouter.get('/health', healthController.getHealth);
 apiRouter.get('/status', healthController.getStatus);
@@ -148,6 +177,80 @@ apiRouter.get(
   requirePermission(PERMISSIONS.ACTIVITY_READ),
   validateQuery(paginationQueryValidator),
   activityController.list
+);
+
+apiRouter.get(
+  '/rules',
+  requirePermission(PERMISSIONS.RULES_READ),
+  validateQuery(ruleQueryValidator),
+  ruleController.list
+);
+apiRouter.post(
+  '/rules',
+  requirePermission(PERMISSIONS.RULES_CREATE),
+  validateBody(ruleCreateValidator),
+  ruleController.create
+);
+apiRouter.post(
+  '/rules/reorder',
+  requirePermission(PERMISSIONS.RULES_UPDATE),
+  validateBody(ruleReorderValidator),
+  ruleController.reorder
+);
+apiRouter.post(
+  '/rules/test',
+  requirePermission(PERMISSIONS.RULES_TEST),
+  validateBody(ruleTestValidator),
+  ruleController.test
+);
+apiRouter.post(
+  '/rules/evaluate',
+  requirePermission(PERMISSIONS.RULES_EVALUATE),
+  validateBody(ruleEvaluateValidator),
+  ruleController.evaluate
+);
+apiRouter.get(
+  '/rules/history',
+  requirePermission(PERMISSIONS.RULES_READ),
+  validateQuery(ruleHistoryQueryValidator),
+  ruleController.history
+);
+apiRouter.get(
+  '/rules/:id',
+  requirePermission(PERMISSIONS.RULES_READ),
+  validateParams(idParamsValidator),
+  ruleController.getById
+);
+apiRouter.patch(
+  '/rules/:id',
+  requirePermission(PERMISSIONS.RULES_UPDATE),
+  validateParams(idParamsValidator),
+  validateBody(ruleUpdateValidator),
+  ruleController.update
+);
+apiRouter.delete(
+  '/rules/:id',
+  requirePermission(PERMISSIONS.RULES_DELETE),
+  validateParams(idParamsValidator),
+  ruleController.delete
+);
+apiRouter.post(
+  '/rules/:id/enable',
+  requirePermission(PERMISSIONS.RULES_UPDATE),
+  validateParams(idParamsValidator),
+  ruleController.enable
+);
+apiRouter.post(
+  '/rules/:id/disable',
+  requirePermission(PERMISSIONS.RULES_UPDATE),
+  validateParams(idParamsValidator),
+  ruleController.disable
+);
+apiRouter.post(
+  '/rules/:id/duplicate',
+  requirePermission(PERMISSIONS.RULES_CREATE),
+  validateParams(idParamsValidator),
+  ruleController.duplicate
 );
 
 apiRouter.post(

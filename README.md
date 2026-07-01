@@ -1,6 +1,6 @@
-# Anomalyze - Financial Anomaly Detection SaaS
+# OutlierX - Financial Anomaly Detection SaaS
 
-Anomalyze is a multi-tenant SaaS foundation for financial anomaly detection. This phase provides the shared data layer, Clerk-backed authentication, organization model, RBAC, API key management, activity logging, protected frontend shell, and a production-grade CSV data ingestion pipeline.
+OutlierX is a multi-tenant SaaS foundation for financial anomaly detection. This phase provides the shared data layer, Clerk-backed authentication, organization model, RBAC, API key management, activity logging, and minimal protected frontend shell.
 
 ## Technology Stack
 

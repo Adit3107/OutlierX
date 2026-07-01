@@ -1,56 +1,115 @@
-import { Transaction } from '@anomaly/shared';
+import { Prisma, PrismaClient, UploadStatus } from '@prisma/client';
+import { prisma } from '../lib/prisma.js';
 
-export interface ITransactionRepository {
-  create(data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'anomalous' | 'status'>): Promise<Transaction>;
-  findById(id: string): Promise<Transaction | null>;
-  findMany(filters: {
-    page: number;
-    limit: number;
-    category?: string;
-  }): Promise<{ items: Transaction[]; total: number }>;
+export interface PaginationInput {
+  page: number;
+  limit: number;
 }
 
-export class TransactionRepository implements ITransactionRepository {
-  private static mockDb: Transaction[] = [];
+export interface TransactionFilters extends PaginationInput {
+  sortBy: 'timestamp' | 'amount' | 'merchant' | 'country' | 'transactionId';
+  sortOrder: 'asc' | 'desc';
+  search?: string;
+  country?: string;
+  merchant?: string;
+  status?: string;
+}
 
-  async create(
-    data: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt' | 'anomalous' | 'status'>
-  ): Promise<Transaction> {
-    const newTransaction: Transaction = {
-      id: `tx_mock_${Math.random().toString(36).substring(2, 11)}`,
-      ...data,
-      status: 'PENDING',
-      anomalous: Math.random() > 0.8, // Mock detection flag
-      anomalyScore: parseFloat(Math.random().toFixed(2)),
-      anomalyReason: Math.random() > 0.8 ? 'Unusual transaction amount threshold breached' : undefined,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+export class UploadRepository {
+  constructor(private db: PrismaClient = prisma) {}
+
+  create(data: Prisma.UploadUncheckedCreateInput) {
+    return this.db.upload.create({ data });
+  }
+
+  update(id: string, organizationId: string, data: Prisma.UploadUpdateInput) {
+    return this.db.upload.update({
+      where: { id, organizationId },
+      data,
+    });
+  }
+
+  findById(id: string, organizationId: string) {
+    return this.db.upload.findFirst({
+      where: { id, organizationId },
+    });
+  }
+
+  findByHash(organizationId: string, fileHash: string) {
+    return this.db.upload.findUnique({
+      where: {
+        organizationId_fileHash: {
+          organizationId,
+          fileHash,
+        },
+      },
+    });
+  }
+
+  list(organizationId: string, filters: PaginationInput & { status?: UploadStatus }) {
+    const where: Prisma.UploadWhereInput = {
+      organizationId,
+      ...(filters.status ? { status: filters.status } : {}),
     };
 
-    TransactionRepository.mockDb.push(newTransaction);
-    return newTransaction;
+    return this.db.$transaction([
+      this.db.upload.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (filters.page - 1) * filters.limit,
+        take: filters.limit,
+      }),
+      this.db.upload.count({ where }),
+    ]);
   }
 
-  async findById(id: string): Promise<Transaction | null> {
-    const tx = TransactionRepository.mockDb.find((t) => t.id === id);
-    return tx || null;
+  delete(id: string, organizationId: string) {
+    return this.db.upload.delete({
+      where: { id, organizationId },
+    });
   }
+}
 
-  async findMany(filters: {
-    page: number;
-    limit: number;
-    category?: string;
-  }): Promise<{ items: Transaction[]; total: number }> {
-    let list = [...TransactionRepository.mockDb];
+export class TransactionRepository {
+  constructor(private db: PrismaClient = prisma) {}
 
-    if (filters.category) {
-      list = list.filter((t) => t.category === filters.category);
+  createMany(data: Prisma.TransactionCreateManyInput[]) {
+    if (data.length === 0) {
+      return Promise.resolve({ count: 0 });
     }
 
-    const total = list.length;
-    const startIndex = (filters.page - 1) * filters.limit;
-    const items = list.slice(startIndex, startIndex + filters.limit);
+    return this.db.transaction.createMany({ data });
+  }
 
-    return { items, total };
+  listByUpload(organizationId: string, uploadId: string, filters: TransactionFilters) {
+    const where: Prisma.TransactionWhereInput = {
+      organizationId,
+      uploadId,
+      ...(filters.country ? { country: { contains: filters.country, mode: 'insensitive' } } : {}),
+      ...(filters.merchant
+        ? { merchant: { contains: filters.merchant, mode: 'insensitive' } }
+        : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.search
+        ? {
+            OR: [
+              { transactionId: { contains: filters.search, mode: 'insensitive' } },
+              { merchant: { contains: filters.search, mode: 'insensitive' } },
+              { referenceNumber: { contains: filters.search, mode: 'insensitive' } },
+              { customerId: { contains: filters.search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+
+    return this.db.$transaction([
+      this.db.transaction.findMany({
+        where,
+        orderBy: { [filters.sortBy]: filters.sortOrder },
+        skip: (filters.page - 1) * filters.limit,
+        take: filters.limit,
+      }),
+      this.db.transaction.count({ where }),
+    ]);
   }
 }

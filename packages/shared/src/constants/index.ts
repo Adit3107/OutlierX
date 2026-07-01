@@ -1,8 +1,14 @@
 export const TRANSACTION_STATUSES = {
-  PENDING: 'PENDING',
-  APPROVED: 'APPROVED',
-  REJECTED: 'REJECTED',
-  FLAGGED: 'FLAGGED',
+  IMPORTED: 'IMPORTED',
+} as const;
+
+export const UPLOAD_STATUSES = {
+  UPLOADING: 'UPLOADING',
+  UPLOADED: 'UPLOADED',
+  PARSING: 'PARSING',
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
 } as const;
 
 export const USER_ROLES = {
@@ -72,6 +78,10 @@ export const PERMISSIONS = {
   API_KEYS_READ: 'api-keys:read',
   API_KEYS_CREATE: 'api-keys:create',
   API_KEYS_DELETE: 'api-keys:delete',
+  UPLOADS_READ: 'uploads:read',
+  UPLOADS_CREATE: 'uploads:create',
+  UPLOADS_DELETE: 'uploads:delete',
+  TRANSACTIONS_READ: 'transactions:read',
   ACTIVITY_READ: 'activity:read',
 } as const;
 
@@ -96,6 +106,8 @@ export const TRANSACTION_CATEGORIES = [
 ] as const;
 
 export const DEFAULT_PAGE_LIMIT = 20;
+export const MAX_UPLOAD_SIZE_BYTES = 100 * 1024 * 1024;
+export const CSV_MIME_TYPES = ['text/csv', 'application/csv', 'text/plain', 'application/vnd.ms-excel'] as const;
 
 export const ERROR_CODES = {
   UNAUTHORIZED: 'UNAUTHORIZED',

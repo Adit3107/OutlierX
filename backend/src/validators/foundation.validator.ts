@@ -5,6 +5,8 @@ import {
   MemberUpdateSchema,
   OrganizationUpdateSchema,
   PaginationQuerySchema,
+  QueryTransactionsSchema,
+  UploadQuerySchema,
 } from '@anomaly/shared';
 import { z } from 'zod';
 
@@ -18,3 +20,5 @@ export const memberUpdateValidator = MemberUpdateSchema;
 export const apiKeyCreateValidator = ApiKeyCreateSchema;
 export const apiKeyQueryValidator = ApiKeyQuerySchema;
 export const paginationQueryValidator = PaginationQuerySchema;
+export const uploadQueryValidator = UploadQuerySchema;
+export const transactionQueryValidator = QueryTransactionsSchema;

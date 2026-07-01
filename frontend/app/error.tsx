@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 export default function Error({
   error,
@@ -15,20 +15,28 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-      <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-500/10 text-red-500 mb-4 border border-red-500/20">
-        <AlertCircle className="w-6 h-6" />
-      </div>
-      <h2 className="text-xl font-semibold tracking-tight text-white mb-2">Something went wrong</h2>
-      <p className="text-sm text-muted-foreground max-w-md mb-6">
-        An error occurred while compiling this page. Detail: {error.message || 'System Exception'}
-      </p>
-      <button
-        onClick={() => reset()}
-        className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/95 transition-colors rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-      >
-        Try reloading view
-      </button>
-    </div>
+    <main className="flex min-h-[60vh] items-center justify-center bg-background px-4 text-foreground">
+      <section className="w-full max-w-lg rounded-md border border-border border-l-[3px] bg-surface p-4" style={{ borderLeftColor: 'var(--critical)' }}>
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="mt-0.5 h-5 w-5 text-severity-critical" />
+          <div className="min-w-0 flex-1">
+            <h1 className="font-display text-lg font-semibold">Console View Failed</h1>
+            <p className="mt-2 text-sm leading-[1.4] text-muted-foreground">
+              The current analysis view could not be rendered.
+            </p>
+            <p className="mt-3 break-words font-mono text-xs text-muted-foreground">
+              {error.message || 'SYSTEM_EXCEPTION'}
+            </p>
+            <button
+              className="mt-4 h-8 rounded-md bg-primary-strong px-3 text-sm font-medium text-primary-foreground transition-colors duration-200 ease-out hover:bg-primary-strong/90"
+              onClick={() => reset()}
+              type="button"
+            >
+              Reload view
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }

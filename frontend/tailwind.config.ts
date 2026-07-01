@@ -17,39 +17,47 @@ const config: Config = {
     },
     extend: {
       colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        border: 'rgb(var(--border-rgb) / <alpha-value>)',
+        input: 'rgb(var(--border-rgb) / <alpha-value>)',
+        ring: 'rgb(var(--primary-rgb) / <alpha-value>)',
+        background: 'rgb(var(--background-rgb) / <alpha-value>)',
+        foreground: 'rgb(var(--foreground-rgb) / <alpha-value>)',
+        surface: {
+          DEFAULT: 'rgb(var(--surface-rgb) / <alpha-value>)',
+          alt: 'rgb(var(--surface-alt-rgb) / <alpha-value>)',
+        },
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT: 'rgb(var(--primary-rgb) / <alpha-value>)',
+          foreground: 'var(--primary-foreground)',
+          strong: 'rgb(var(--primary-strong-rgb) / <alpha-value>)',
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT: 'rgb(var(--surface-alt-rgb) / <alpha-value>)',
+          foreground: 'rgb(var(--muted-foreground-rgb) / <alpha-value>)',
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: 'rgb(var(--accent-rgb) / <alpha-value>)',
+          foreground: 'rgb(var(--foreground-rgb) / <alpha-value>)',
         },
         popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
+          DEFAULT: 'rgb(var(--surface-alt-rgb) / <alpha-value>)',
+          foreground: 'rgb(var(--foreground-rgb) / <alpha-value>)',
         },
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          DEFAULT: 'rgb(var(--surface-rgb) / <alpha-value>)',
+          foreground: 'rgb(var(--foreground-rgb) / <alpha-value>)',
         },
+        severity: {
+          critical: 'rgb(var(--critical-rgb) / <alpha-value>)',
+          high: 'rgb(var(--high-rgb) / <alpha-value>)',
+          medium: 'rgb(var(--medium-rgb) / <alpha-value>)',
+          low: 'rgb(var(--low-rgb) / <alpha-value>)',
+        },
+      },
+      fontFamily: {
+        sans: ['var(--font-sans)', 'Inter', 'sans-serif'],
+        display: ['var(--font-display)', 'Space Grotesk', 'sans-serif'],
+        mono: ['var(--font-mono)', 'JetBrains Mono', 'monospace'],
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -65,10 +73,15 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        'anomaly-pulse': {
+          '0%': { opacity: '0.55', transform: 'scale(0.72)' },
+          '100%': { opacity: '0', transform: 'scale(1.9)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'anomaly-pulse': 'anomaly-pulse 600ms ease-out 1',
       },
     },
   },

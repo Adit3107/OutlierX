@@ -4,49 +4,62 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 263.4 70% 50.4%;
-    --radius: 0.75rem;
+    --background: #0B0C15;
+    --surface: #141522;
+    --surface-alt: #1A1D2D;
+    --border: #1E2233;
+    --foreground: #F5F7FA;
+    --muted-foreground: #8B93A8;
+    --primary: #22D3EE;
+    --primary-strong: #6366F1;
+    --accent: #A78BFA;
+    --critical: #F43F5E;
+    --high: #FB923C;
+    --medium: #FACC15;
+    --low: #34D399;
+    --background-rgb: 11 12 21;
+    --surface-rgb: 20 21 34;
+    --surface-alt-rgb: 26 29 45;
+    --border-rgb: 30 34 51;
+    --foreground-rgb: 245 247 250;
+    --muted-foreground-rgb: 139 147 168;
+    --primary-rgb: 34 211 238;
+    --primary-strong-rgb: 99 102 241;
+    --accent-rgb: 167 139 250;
+    --critical-rgb: 244 63 94;
+    --high-rgb: 251 146 60;
+    --medium-rgb: 250 204 21;
+    --low-rgb: 52 211 153;
+    --card: var(--surface);
+    --card-foreground: var(--foreground);
+    --popover: var(--surface-alt);
+    --popover-foreground: var(--foreground);
+    --input: var(--border);
+    --ring: var(--primary);
+    --primary-foreground: #0B0C15;
+    --radius: 0.5rem;
   }
 
   .light {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262.1 83.3% 57.8%;
-    --radius: 0.75rem;
+    --background: #F8FAFC;
+    --surface: #FFFFFF;
+    --surface-alt: #F1F5F9;
+    --border: #E2E8F0;
+    --foreground: #0F172A;
+    --muted-foreground: #64748B;
+    --primary: #4F46E5;
+    --primary-strong: #4F46E5;
+    --accent: #7C3AED;
+    --background-rgb: 248 250 252;
+    --surface-rgb: 255 255 255;
+    --surface-alt-rgb: 241 245 249;
+    --border-rgb: 226 232 240;
+    --foreground-rgb: 15 23 42;
+    --muted-foreground-rgb: 100 116 139;
+    --primary-rgb: 79 70 229;
+    --primary-strong-rgb: 79 70 229;
+    --accent-rgb: 124 58 237;
+    --primary-foreground: #FFFFFF;
   }
 }
 
@@ -54,42 +67,101 @@
   * {
     @apply border-border;
   }
+
+  html {
+    color-scheme: dark;
+  }
+
+  html.light {
+    color-scheme: light;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    line-height: 1.4;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display), var(--font-sans), sans-serif;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
   }
 }
 
-/* Custom premium scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--background));
+  background: var(--background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted));
+  background: color-mix(in srgb, var(--muted-foreground) 32%, transparent);
   border-radius: var(--radius);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.5);
+  background: color-mix(in srgb, var(--muted-foreground) 48%, transparent);
 }
 
-/* Glassmorphism utility card styling */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.015);
+  background: rgb(var(--surface-alt-rgb) / 0.72);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgb(var(--border-rgb) / 0.75);
 }
 
 .light .glass-panel {
-  background: rgba(0, 0, 0, 0.015);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgb(var(--surface-rgb) / 0.78);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.anomaly-pulse-once::after {
+  animation: anomaly-pulse 600ms ease-out 1;
+  border: 1px solid currentColor;
+  border-radius: 9999px;
+  content: "";
+  inset: -7px;
+  opacity: 0;
+  position: absolute;
+}
+
+@keyframes anomaly-pulse {
+  0% {
+    opacity: 0.55;
+    transform: scale(0.72);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+  }
+
+  .anomaly-pulse-once::after {
+    animation: none;
+  }
 }

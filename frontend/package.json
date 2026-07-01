@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@anomaly/shared": "*",
-    "@clerk/nextjs": "^5.1.6",
+    "@clerk/nextjs": "^6.0.2",
     "@tanstack/react-query": "^5.48.0",
     "axios": "^1.7.2",
     "clsx": "^2.1.1",

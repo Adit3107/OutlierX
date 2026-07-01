@@ -64,6 +64,7 @@ export const ACTIVITY_ENTITIES = {
   MEMBERSHIP: 'MEMBERSHIP',
   API_KEY: 'API_KEY',
   UPLOAD: 'UPLOAD',
+  TRANSACTION: 'TRANSACTION',
   ALERT: 'ALERT',
   SYSTEM: 'SYSTEM',
 } as const;
@@ -82,6 +83,7 @@ export const PERMISSIONS = {
   UPLOADS_CREATE: 'uploads:create',
   UPLOADS_DELETE: 'uploads:delete',
   TRANSACTIONS_READ: 'transactions:read',
+  TRANSACTIONS_DELETE: 'transactions:delete',
   ACTIVITY_READ: 'activity:read',
 } as const;
 

@@ -66,6 +66,44 @@ Storage:
 - API responses expose storage keys/URLs, never absolute server file paths.
 - Duplicate uploads are prevented per organization by SHA-256 file hash.
 
+## Transaction Investigation
+
+The investigation module lets analysts explore imported transactions without anomaly detection, rule scoring, ML predictions, risk levels, or severity indicators. It is an organization-scoped console for search, filtering, traceability, export, and record inspection.
+
+Architecture:
+
+- Routes remain thin and delegate to controllers.
+- Controllers read validated request data and call services.
+- Services handle audit logging, export serialization, deletion checks, and response mapping.
+- Repositories contain Prisma query logic only.
+- React Query powers cached list/detail reads from the frontend.
+
+Explorer:
+
+- `/transactions` displays a compact analyst table with sticky headers, selectable rows, sortable columns, server-side pagination, active filter chips, and loading/empty/error states.
+- `/transactions/[transactionId]` displays the dedicated transaction details page.
+- Desktop row clicks open a right-side details drawer; mobile row clicks navigate to the details page.
+- IDs, references, upload identifiers, account numbers, row numbers, and raw metadata use JetBrains Mono.
+
+Filtering and search:
+
+- Global search is server-side and covers transaction ID, merchant, description, reference number, customer ID, country, city, and account number.
+- Filters can be combined for date range, country, merchant, merchant category, payment method, currency, amount range, upload source, and status.
+- Sorting is server-side for timestamp, amount, merchant, country, created date, and transaction ID.
+- Pagination is server-side with page, page size, total records, next/previous, and jump-to-page.
+
+Traceability:
+
+- Every transaction response includes upload filename, upload time, uploaded by, organization, and upload ID.
+- Original CSV row number is preserved as `metadata.sourceRow` from ingestion and surfaced in details/export views.
+
+Export and bulk actions:
+
+- `GET /transactions/export` supports CSV and JSON.
+- Export scopes are current page, filtered results, and selected rows.
+- Admin/owner users can bulk delete transactions through `transactions:delete`.
+- Bulk tag and bulk mark reviewed are placeholders that log audit events but do not mutate transaction records.
+
 ## Authentication Flow
 
 The frontend uses Clerk for session state and sends a Clerk session token to the Express API as a Bearer token. The backend verifies the token with Clerk, loads the Clerk user, then synchronizes the database foundation:
@@ -115,6 +153,12 @@ Authenticated:
 - `GET /uploads/:id`
 - `DELETE /uploads/:id`
 - `GET /uploads/:id/transactions`
+- `GET /transactions`
+- `GET /transactions/:id`
+- `GET /transactions/export`
+- `POST /transactions/bulk-actions`
+- `DELETE /transactions/:id`
+- `DELETE /transactions`
 
 API responses use a standard shape:
 

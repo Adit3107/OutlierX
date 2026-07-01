@@ -60,7 +60,79 @@ function toTransaction(
     metadata: (transaction.metadata as Record<string, unknown> | null) ?? null,
     createdAt: transaction.createdAt,
     updatedAt: transaction.updatedAt,
+    upload: transaction.upload
+      ? {
+          id: transaction.upload.id,
+          filename: transaction.upload.filename,
+          originalFilename: transaction.upload.originalFilename,
+          createdAt: transaction.upload.createdAt,
+          uploadedBy: transaction.upload.uploadedBy,
+          organization: transaction.upload.organization,
+        }
+      : undefined,
   };
+}
+
+function escapeCsv(value: unknown) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  const stringValue = value instanceof Date ? value.toISOString() : String(value);
+  return /[",\n\r]/.test(stringValue) ? `"${stringValue.replace(/"/g, '""')}"` : stringValue;
+}
+
+function transactionsToCsv(transactions: Transaction[]) {
+  const headers = [
+    'id',
+    'transactionId',
+    'timestamp',
+    'merchant',
+    'merchantCategory',
+    'country',
+    'city',
+    'paymentMethod',
+    'amount',
+    'currency',
+    'status',
+    'description',
+    'referenceNumber',
+    'customerId',
+    'accountNumber',
+    'uploadFilename',
+    'uploadTime',
+    'uploadedBy',
+    'organization',
+    'sourceRow',
+  ];
+
+  const rows = transactions.map((transaction) => {
+    const sourceRow = transaction.metadata?.sourceRow;
+    return [
+      transaction.id,
+      transaction.transactionId,
+      transaction.timestamp,
+      transaction.merchant,
+      transaction.merchantCategory,
+      transaction.country,
+      transaction.city,
+      transaction.paymentMethod,
+      transaction.amount,
+      transaction.currency,
+      transaction.status,
+      transaction.description,
+      transaction.referenceNumber,
+      transaction.customerId,
+      transaction.accountNumber,
+      transaction.upload?.originalFilename,
+      transaction.upload?.createdAt,
+      transaction.upload?.uploadedBy?.email,
+      transaction.upload?.organization?.name,
+      sourceRow,
+    ];
+  });
+
+  return [headers, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\n');
 }
 
 async function hashFile(filePath: string): Promise<string> {
@@ -280,8 +352,138 @@ export class UploadService {
 export class TransactionService {
   constructor(
     private transactionRepository: TransactionRepository,
-    private uploadRepository: UploadRepository
+    private uploadRepository: UploadRepository,
+    private activityService: ActivityService
   ) {}
+
+  async listTransactions(
+    organizationId: string,
+    filters: TransactionFilters
+  ): Promise<PaginatedResponse<Transaction>> {
+    const [items, total] = await this.transactionRepository.list(organizationId, filters);
+
+    return {
+      items: items.map(toTransaction),
+      total,
+      page: filters.page,
+      limit: filters.limit,
+      totalPages: Math.ceil(total / filters.limit),
+    };
+  }
+
+  async getTransaction(organizationId: string, userId: string, id: string): Promise<Transaction> {
+    const transaction = await this.transactionRepository.findById(organizationId, id);
+    if (!transaction) {
+      throw new NotFoundError('Transaction not found');
+    }
+
+    await this.activityService.log({
+      organizationId,
+      userId,
+      action: 'transaction.viewed',
+      entity: 'TRANSACTION',
+      entityId: transaction.id,
+      metadata: { transactionId: transaction.transactionId },
+    });
+
+    return toTransaction(transaction);
+  }
+
+  async exportTransactions(
+    organizationId: string,
+    userId: string,
+    filters: TransactionFilters
+  ): Promise<{ body: string; contentType: string; filename: string }> {
+    const transactions = (await this.transactionRepository.listForExport(organizationId, filters)).map(
+      toTransaction
+    );
+    const format = filters.format ?? 'csv';
+
+    await this.activityService.log({
+      organizationId,
+      userId,
+      action: 'transactions.exported',
+      entity: 'TRANSACTION',
+      metadata: {
+        count: transactions.length,
+        format,
+        scope: filters.scope ?? 'filtered',
+      },
+    });
+
+    if (format === 'json') {
+      return {
+        body: JSON.stringify(transactions, null, 2),
+        contentType: 'application/json',
+        filename: 'transactions.json',
+      };
+    }
+
+    return {
+      body: transactionsToCsv(transactions),
+      contentType: 'text/csv',
+      filename: 'transactions.csv',
+    };
+  }
+
+  async deleteTransaction(organizationId: string, userId: string, id: string) {
+    const transaction = await this.transactionRepository.findById(organizationId, id);
+    if (!transaction) {
+      throw new NotFoundError('Transaction not found');
+    }
+
+    const deleted = await this.transactionRepository.deleteById(transaction.id);
+    await this.activityService.log({
+      organizationId,
+      userId,
+      action: 'transaction.deleted',
+      entity: 'TRANSACTION',
+      entityId: deleted.id,
+      metadata: { transactionId: deleted.transactionId },
+    });
+
+    return toTransaction(deleted);
+  }
+
+  async deleteTransactions(organizationId: string, userId: string, ids: string[]) {
+    if (ids.length === 0) {
+      throw new BadRequestError('At least one transaction id is required');
+    }
+
+    const result = await this.transactionRepository.deleteMany(organizationId, ids);
+    await this.activityService.log({
+      organizationId,
+      userId,
+      action: 'transactions.deleted',
+      entity: 'TRANSACTION',
+      metadata: { count: result.count },
+    });
+
+    return { count: result.count };
+  }
+
+  async logBulkAction(
+    organizationId: string,
+    userId: string,
+    payload: { ids: string[]; action: 'TAG' | 'MARK_REVIEWED' }
+  ) {
+    await this.activityService.log({
+      organizationId,
+      userId,
+      action: `transactions.${payload.action.toLowerCase()}.placeholder`,
+      entity: 'TRANSACTION',
+      metadata: {
+        count: payload.ids.length,
+        ids: payload.ids,
+      },
+    });
+
+    return {
+      action: payload.action,
+      count: payload.ids.length,
+      status: 'PLACEHOLDER',
+    };
+  }
 
   async listUploadTransactions(
     organizationId: string,

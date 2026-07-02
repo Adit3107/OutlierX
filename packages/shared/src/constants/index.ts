@@ -133,14 +133,23 @@ export const ACTIVITY_ENTITIES = {
 } as const;
 
 export const PERMISSIONS = {
+  PROFILE_READ: 'profile:read',
+  PROFILE_UPDATE: 'profile:update',
+  SETTINGS_READ: 'settings:read',
+  SETTINGS_UPDATE: 'settings:update',
   ORGANIZATION_READ: 'organization:read',
   ORGANIZATION_UPDATE: 'organization:update',
+  ORGANIZATION_DELETE: 'organization:delete',
+  ORGANIZATION_TRANSFER: 'organization:transfer',
   MEMBERS_READ: 'members:read',
   MEMBERS_CREATE: 'members:create',
   MEMBERS_UPDATE: 'members:update',
   MEMBERS_DELETE: 'members:delete',
+  ADMIN_READ: 'admin:read',
+  SYSTEM_HEALTH_READ: 'system-health:read',
   API_KEYS_READ: 'api-keys:read',
   API_KEYS_CREATE: 'api-keys:create',
+  API_KEYS_UPDATE: 'api-keys:update',
   API_KEYS_DELETE: 'api-keys:delete',
   UPLOADS_READ: 'uploads:read',
   UPLOADS_CREATE: 'uploads:create',

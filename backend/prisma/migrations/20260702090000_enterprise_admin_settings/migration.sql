@@ -1,0 +1,10 @@
+ALTER TABLE "User"
+  ADD COLUMN "theme" TEXT NOT NULL DEFAULT 'dark',
+  ADD COLUMN "language" TEXT NOT NULL DEFAULT 'en',
+  ADD COLUMN "timezone" TEXT NOT NULL DEFAULT 'UTC',
+  ADD COLUMN "notificationPreferences" JSONB;
+
+ALTER TABLE "Organization"
+  ADD COLUMN "timezone" TEXT NOT NULL DEFAULT 'UTC',
+  ADD COLUMN "defaultCurrency" TEXT NOT NULL DEFAULT 'USD',
+  ADD COLUMN "language" TEXT NOT NULL DEFAULT 'en';

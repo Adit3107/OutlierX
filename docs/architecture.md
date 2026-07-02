@@ -1,4 +1,4 @@
-# Architecture Overview - Anomalyze Platform
+# Architecture Overview - OutlierX Platform
 
 This document describes the high-level software architecture, layered structure, and service interfaces for the AI-powered Financial Anomaly Detection SaaS.
 

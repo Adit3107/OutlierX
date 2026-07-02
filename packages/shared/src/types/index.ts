@@ -51,6 +51,10 @@ export interface User {
   avatar?: string | null;
   status: UserStatus;
   currentOrganizationId?: string | null;
+  theme?: string;
+  language?: string;
+  timezone?: string;
+  notificationPreferences?: unknown | null;
   createdAt: ApiDate;
   updatedAt: ApiDate;
 }
@@ -62,6 +66,9 @@ export interface Organization {
   logo?: string | null;
   industry?: string | null;
   website?: string | null;
+  timezone?: string;
+  defaultCurrency?: string;
+  language?: string;
   subscriptionPlan: SubscriptionPlan;
   subscriptionStatus: SubscriptionStatus;
   maxUsers: number;
@@ -92,6 +99,73 @@ export interface ApiKey {
   status: ApiKeyStatus;
   createdAt: ApiDate;
   updatedAt: ApiDate;
+}
+
+export interface NotificationPreferences {
+  email: boolean;
+  browser: boolean;
+  criticalAlerts: boolean;
+  highAlerts: boolean;
+  weeklySummary: boolean;
+  marketing: boolean;
+}
+
+export interface ProfilePayload {
+  user: User;
+  organization: Organization;
+  membership: Membership;
+  recentActivity: ActivityLog[];
+  preferences: {
+    theme: string;
+    language: string;
+    timezone: string;
+    notifications: NotificationPreferences;
+  };
+}
+
+export interface OrganizationUsageSummary {
+  members: number;
+  activeMembers: number;
+  uploads: number;
+  apiKeys: number;
+  storageBytes: number;
+  transactionsProcessed: number;
+  alerts: number;
+}
+
+export interface SettingsPayload {
+  organization: Organization;
+  user: User;
+  usage: OrganizationUsageSummary;
+  notifications: NotificationPreferences;
+}
+
+export interface SystemHealthPayload {
+  backendStatus: 'UP' | 'DOWN';
+  mlServiceStatus: 'UP' | 'DOWN';
+  databaseStatus: 'CONNECTED' | 'DISCONNECTED';
+  storageStatus: 'READY' | 'DEGRADED';
+  apiVersion: string;
+  modelVersion: string;
+  environment: string;
+  timestamp: ApiDate;
+}
+
+export interface AdminDashboardPayload {
+  totals: {
+    organizations: number;
+    users: number;
+    uploads: number;
+    transactions: number;
+    alerts: number;
+    apiKeys: number;
+  };
+  recentOrganizations: Organization[];
+  recentUsers: User[];
+  recentUploads: Upload[];
+  recentAlerts: Alert[];
+  recentActivity: ActivityLog[];
+  health: SystemHealthPayload;
 }
 
 export interface Alert {
@@ -201,7 +275,7 @@ export interface ActivityLog {
   action: string;
   entity: ActivityEntity;
   entityId?: string | null;
-  metadata?: Record<string, unknown> | null;
+  metadata?: unknown | null;
   createdAt: ApiDate;
   updatedAt: ApiDate;
   user?: Pick<User, 'id' | 'email' | 'firstName' | 'lastName' | 'avatar'> | null;

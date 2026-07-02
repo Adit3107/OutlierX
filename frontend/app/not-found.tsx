@@ -9,7 +9,7 @@ export default function NotFound() {
         <div className="flex items-center gap-3 border-b border-border pb-3">
           <TerminalSquare className="h-5 w-5 text-primary" />
           <div>
-            <h1 className="font-display text-lg font-semibold">Route Not Found</h1>
+            <h1 className="font-display text-lg font-semibold">OutlierX Route Not Found</h1>
             <p className="font-mono text-xs text-muted-foreground">HTTP 404</p>
           </div>
         </div>

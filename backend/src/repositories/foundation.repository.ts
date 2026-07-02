@@ -1,4 +1,11 @@
-import { ApiKeyStatus, MembershipStatus, Prisma, PrismaClient, Role } from '@prisma/client';
+import {
+  ActivityEntity,
+  ApiKeyStatus,
+  MembershipStatus,
+  Prisma,
+  PrismaClient,
+  Role,
+} from '@prisma/client';
 import { prisma } from '../lib/prisma.js';
 
 export class OrganizationRepository {
@@ -18,17 +25,74 @@ export class OrganizationRepository {
       data,
     });
   }
+
+  delete(id: string) {
+    return this.db.organization.delete({
+      where: { id },
+    });
+  }
+
+  usageSummary(organizationId: string) {
+    return this.db.$transaction([
+      this.db.membership.count({ where: { organizationId } }),
+      this.db.membership.count({ where: { organizationId, status: 'ACTIVE' } }),
+      this.db.upload.count({ where: { organizationId } }),
+      this.db.apiKey.count({ where: { organizationId } }),
+      this.db.upload.aggregate({ where: { organizationId }, _sum: { fileSize: true } }),
+      this.db.transaction.count({ where: { organizationId } }),
+      this.db.alert.count({ where: { organizationId, deletedAt: null } }),
+    ]);
+  }
 }
 
 export class MemberRepository {
   constructor(private db: PrismaClient = prisma) {}
 
-  list(organizationId: string) {
+  listAll(organizationId: string) {
     return this.db.membership.findMany({
       where: { organizationId },
       include: { user: true },
       orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
     });
+  }
+
+  list(
+    organizationId: string,
+    options: {
+      page: number;
+      limit: number;
+      search?: string;
+      role?: Role;
+      status?: MembershipStatus;
+    }
+  ) {
+    const where: Prisma.MembershipWhereInput = {
+      organizationId,
+      ...(options?.role ? { role: options.role } : {}),
+      ...(options?.status ? { status: options.status } : {}),
+      ...(options?.search
+        ? {
+            user: {
+              OR: [
+                { email: { contains: options.search, mode: 'insensitive' } },
+                { firstName: { contains: options.search, mode: 'insensitive' } },
+                { lastName: { contains: options.search, mode: 'insensitive' } },
+              ],
+            },
+          }
+        : {}),
+    };
+
+    return this.db.$transaction([
+      this.db.membership.findMany({
+        where,
+        include: { user: true },
+        orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
+        skip: (options.page - 1) * options.limit,
+        take: options.limit,
+      }),
+      this.db.membership.count({ where }),
+    ]);
   }
 
   findById(id: string, organizationId: string) {
@@ -125,6 +189,13 @@ export class ApiKeyRepository {
       data: { status },
     });
   }
+
+  update(id: string, data: Prisma.ApiKeyUpdateInput) {
+    return this.db.apiKey.update({
+      where: { id },
+      data,
+    });
+  }
 }
 
 export class ActivityRepository {
@@ -134,10 +205,46 @@ export class ActivityRepository {
     return this.db.activityLog.create({ data });
   }
 
-  list(organizationId: string, pagination: { page: number; limit: number }) {
+  list(
+    organizationId: string,
+    pagination: {
+      page: number;
+      limit: number;
+      search?: string;
+      action?: string;
+      entity?: ActivityEntity;
+      userId?: string;
+      startDate?: string;
+      endDate?: string;
+    }
+  ) {
+    const where: Prisma.ActivityLogWhereInput = {
+      organizationId,
+      ...(pagination.action ? { action: { contains: pagination.action, mode: 'insensitive' } } : {}),
+      ...(pagination.entity ? { entity: pagination.entity } : {}),
+      ...(pagination.userId ? { userId: pagination.userId } : {}),
+      ...(pagination.startDate || pagination.endDate
+        ? {
+            createdAt: {
+              ...(pagination.startDate ? { gte: new Date(pagination.startDate) } : {}),
+              ...(pagination.endDate ? { lte: new Date(pagination.endDate) } : {}),
+            },
+          }
+        : {}),
+      ...(pagination.search
+        ? {
+            OR: [
+              { action: { contains: pagination.search, mode: 'insensitive' } },
+              { entityId: { contains: pagination.search, mode: 'insensitive' } },
+              { user: { email: { contains: pagination.search, mode: 'insensitive' } } },
+            ],
+          }
+        : {}),
+    };
+
     return this.db.$transaction([
       this.db.activityLog.findMany({
-        where: { organizationId },
+        where,
         include: {
           user: {
             select: {
@@ -153,7 +260,7 @@ export class ActivityRepository {
         skip: (pagination.page - 1) * pagination.limit,
         take: pagination.limit,
       }),
-      this.db.activityLog.count({ where: { organizationId } }),
+      this.db.activityLog.count({ where }),
     ]);
   }
 }

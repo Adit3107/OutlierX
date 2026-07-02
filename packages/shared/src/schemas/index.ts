@@ -11,6 +11,7 @@ import {
   TRANSACTION_STATUSES,
   UPLOAD_STATUSES,
   USER_ROLES,
+  USER_STATUSES,
 } from '../constants/index.js';
 
 const ruleCategoryValues = ['AMOUNT', 'LOCATION', 'MERCHANT', 'TIME', 'ACCOUNT', 'DEVICE', 'CUSTOM'] as const;
@@ -246,11 +247,61 @@ export const OrganizationUpdateSchema = z.object({
   logo: z.string().url().nullable().optional(),
   industry: z.string().max(120).nullable().optional(),
   website: z.string().url().nullable().optional(),
+  timezone: z.string().min(2).max(80).optional(),
+  defaultCurrency: z.enum(SUPPORTED_CURRENCIES as unknown as [string, ...string[]]).optional(),
+  language: z.string().min(2).max(20).optional(),
+});
+
+export const OrganizationTransferSchema = z.object({
+  membershipId: z.string().uuid(),
+});
+
+export const OrganizationDeleteSchema = z.object({
+  confirmName: z.string().min(2).max(120),
+});
+
+export const NotificationPreferencesSchema = z.object({
+  email: z.boolean().default(true),
+  browser: z.boolean().default(true),
+  criticalAlerts: z.boolean().default(true),
+  highAlerts: z.boolean().default(true),
+  weeklySummary: z.boolean().default(true),
+  marketing: z.boolean().default(false),
+});
+
+export const ProfileUpdateSchema = z.object({
+  firstName: z.string().min(1).max(80).nullable().optional(),
+  lastName: z.string().min(1).max(80).nullable().optional(),
+  avatar: z.string().url().nullable().optional(),
+  theme: z.enum(['dark', 'light', 'system']).optional(),
+  language: z.string().min(2).max(20).optional(),
+  timezone: z.string().min(2).max(80).optional(),
+  notificationPreferences: NotificationPreferencesSchema.partial().optional(),
+}).refine((value) => Object.keys(value).length > 0, {
+  message: 'At least one profile field must be provided',
+});
+
+export const SettingsUpdateSchema = z.object({
+  theme: z.enum(['dark', 'light', 'system']).optional(),
+  language: z.string().min(2).max(20).optional(),
+  timezone: z.string().min(2).max(80).optional(),
+  notificationPreferences: NotificationPreferencesSchema.partial().optional(),
+  organization: OrganizationUpdateSchema.optional(),
+}).refine((value) => Object.keys(value).length > 0, {
+  message: 'At least one settings field must be provided',
 });
 
 export const MemberCreateSchema = z.object({
   email: z.string().email(),
   role: z.enum(Object.values(USER_ROLES) as [string, ...string[]]).default(USER_ROLES.MEMBER),
+});
+
+export const MemberQuerySchema = z.object({
+  page: z.coerce.number().int().positive().default(1),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  search: z.string().trim().max(120).optional(),
+  role: z.enum(Object.values(USER_ROLES) as [string, ...string[]]).optional(),
+  status: z.enum(Object.values(MEMBERSHIP_STATUSES) as [string, ...string[]]).optional(),
 });
 
 export const MemberUpdateSchema = z.object({
@@ -265,6 +316,15 @@ export const ApiKeyCreateSchema = z.object({
   expiresAt: z.string().datetime().optional(),
 });
 
+export const ApiKeyUpdateSchema = z.object({
+  name: z.string().min(2).max(120).optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+  status: z.enum(Object.values(API_KEY_STATUSES) as [string, ...string[]]).optional(),
+  rotate: z.boolean().optional(),
+}).refine((value) => Object.keys(value).length > 0, {
+  message: 'At least one API key field must be provided',
+});
+
 export const ApiKeyQuerySchema = z.object({
   status: z.enum(Object.values(API_KEY_STATUSES) as [string, ...string[]]).optional(),
 });
@@ -272,6 +332,23 @@ export const ApiKeyQuerySchema = z.object({
 export const PaginationQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
+});
+
+export const ActivityQuerySchema = PaginationQuerySchema.extend({
+  search: z.string().trim().max(160).optional(),
+  action: z.string().trim().max(120).optional(),
+  entity: z.enum(['USER', 'ORGANIZATION', 'MEMBERSHIP', 'API_KEY', 'UPLOAD', 'TRANSACTION', 'RULE', 'ALERT', 'SYSTEM']).optional(),
+  userId: z.string().uuid().optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+}).refine((value) => !value.startDate || !value.endDate || new Date(value.startDate) <= new Date(value.endDate), {
+  message: 'Start date must be before end date',
+  path: ['startDate'],
+});
+
+export const AdminUserQuerySchema = PaginationQuerySchema.extend({
+  search: z.string().trim().max(120).optional(),
+  status: z.enum(Object.values(USER_STATUSES) as [string, ...string[]]).optional(),
 });
 
 export const AlertQuerySchema = z.object({

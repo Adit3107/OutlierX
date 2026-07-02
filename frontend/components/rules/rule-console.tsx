@@ -52,6 +52,8 @@ import {
   useToggleRule,
   useUpdateRule,
 } from '../../hooks/rules/use-rules';
+import { AppShell } from '../app-shell';
+
 
 function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ');
@@ -88,7 +90,6 @@ function RiskBadge({ level }: { level: RuleSeverity }) {
 }
 
 function Shell({
-  auth,
   active,
   children,
 }: {
@@ -96,60 +97,10 @@ function Shell({
   active: 'rules' | 'playground';
   children: React.ReactNode;
 }) {
-  const { resolvedTheme, setTheme } = useTheme();
-  const isLight = resolvedTheme === 'light';
-
-  return (
-    <main className="min-h-screen bg-background text-foreground">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-56 border-r border-border bg-background lg:flex lg:flex-col">
-        <div className="flex h-14 items-center gap-3 border-b border-border px-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md border border-primary/40 bg-surface text-primary">
-            <ShieldCheck className="h-4 w-4" />
-          </div>
-          <div>
-            <p className="font-display text-sm font-semibold leading-none">Anomalyze</p>
-            <p className="mt-1 font-mono text-[10px] uppercase text-muted-foreground">Fraud Ops</p>
-          </div>
-        </div>
-        <nav className="flex-1 space-y-1 px-2 py-3">
-          <Link className="flex h-9 items-center gap-2 rounded-md px-2 text-sm text-muted-foreground hover:bg-surface hover:text-foreground" href="/">
-            <RefreshCw className="h-4 w-4" /> Data Sources
-          </Link>
-          <Link className="flex h-9 items-center gap-2 rounded-md px-2 text-sm text-muted-foreground hover:bg-surface hover:text-foreground" href="/transactions">
-            <WalletCards className="h-4 w-4" /> Transactions
-          </Link>
-          <Link className={cn('flex h-9 items-center gap-2 rounded-md px-2 text-sm', active === 'rules' ? 'border border-border bg-surface-alt text-foreground' : 'text-muted-foreground hover:bg-surface hover:text-foreground')} href="/rules">
-            <GitBranch className="h-4 w-4 text-primary" /> Rules
-          </Link>
-          <Link className={cn('flex h-9 items-center gap-2 rounded-md px-2 text-sm', active === 'playground' ? 'border border-border bg-surface-alt text-foreground' : 'text-muted-foreground hover:bg-surface hover:text-foreground')} href="/rules/playground">
-            <FlaskConical className="h-4 w-4 text-primary" /> Playground
-          </Link>
-        </nav>
-      </aside>
-      <div className="lg:pl-56">
-        <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
-          <div className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-4 py-2 lg:px-6">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="font-mono">OPS / RULES</span>
-                <ChevronRight className="h-3 w-3" />
-                <span className="truncate">{auth?.organization.name ?? 'Secure workspace'}</span>
-              </div>
-              <h1 className="mt-1 font-display text-2xl font-semibold leading-none">Rule Engine</h1>
-            </div>
-            <div className="flex items-center gap-2">
-              <button aria-label="Toggle theme" className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground hover:text-foreground" onClick={() => setTheme(isLight ? 'dark' : 'light')} type="button">
-                {isLight ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-              </button>
-              <UserButton afterSignOutUrl="/" />
-            </div>
-          </div>
-        </header>
-        <div className="space-y-4 px-4 py-4 lg:px-6">{children}</div>
-      </div>
-    </main>
-  );
+  const title = active === 'playground' ? 'Rule Playground' : 'Rules';
+  return <AppShell title={title} breadcrumb="OPS / RULES"><div className="space-y-4">{children}</div></AppShell>;
 }
+
 
 function RuleSearch({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (

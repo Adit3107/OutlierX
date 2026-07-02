@@ -46,6 +46,8 @@ import {
 } from '../../hooks/transactions/use-transaction-filters';
 import { useTransaction, useTransactionDecision, useTransactions } from '../../hooks/transactions/use-transactions';
 import { getSeverityConfig } from '../../constants/severity';
+import { AppShell } from '../app-shell';
+
 
 function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ');
@@ -858,32 +860,7 @@ function InvestigationHeader({ auth }: { auth: AuthContext | null }) {
   );
 }
 
-function InvestigationSidebar() {
-  return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-56 border-r border-border bg-background lg:flex lg:flex-col">
-      <div className="flex h-14 items-center gap-3 border-b border-border px-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md border border-primary/40 bg-surface text-primary">
-          <ShieldCheck className="h-4 w-4" />
-        </div>
-        <div>
-          <p className="font-display text-sm font-semibold leading-none">Anomalyze</p>
-          <p className="mt-1 font-mono text-[10px] uppercase text-muted-foreground">Fraud Ops</p>
-        </div>
-      </div>
-      <nav className="flex-1 space-y-1 px-2 py-3">
-        <Link className="flex h-9 items-center gap-2 rounded-md px-2 text-sm text-muted-foreground hover:bg-surface hover:text-foreground" href="/">
-          <RefreshCw className="h-4 w-4" /> Data Sources
-        </Link>
-        <Link className="flex h-9 items-center gap-2 rounded-md border border-border bg-surface-alt px-2 text-sm text-foreground" href="/transactions">
-          <WalletCards className="h-4 w-4 text-primary" /> Transactions
-        </Link>
-        <Link className="flex h-9 items-center gap-2 rounded-md px-2 text-sm text-muted-foreground hover:bg-surface hover:text-foreground" href="/rules">
-          <GitBranch className="h-4 w-4" /> Rules
-        </Link>
-      </nav>
-    </aside>
-  );
-}
+
 
 export function TransactionInvestigationConsole() {
   const { getToken } = useAuth();
@@ -968,53 +945,49 @@ export function TransactionInvestigationConsole() {
   };
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <InvestigationSidebar />
-      <div className="lg:pl-56">
-        <InvestigationHeader auth={auth} />
-        <div className="space-y-4 px-4 py-4 lg:px-6">
-          <TransactionToolbar
-            filters={filterState.filters}
-            onExport={() => setExportOpen(true)}
-            onRefresh={() => void transactionsQuery.refetch()}
-            setFilter={filterState.setFilter}
-          />
-          <TransactionFilters
-            clearAll={filterState.clearAll}
-            clearFilter={filterState.clearFilter}
-            filters={filterState.filters}
-            setFilter={filterState.setFilter}
-          />
-          <BulkActionsBar
-            canDelete={canDelete}
-            onDelete={() => bulkDeleteMutation.mutate()}
-            onExport={() => setExportOpen(true)}
-            onPlaceholder={(action) => bulkActionMutation.mutate(action === 'Bulk tag' ? 'TAG' : 'MARK_REVIEWED')}
-            selectedCount={selectedIds.length}
-          />
-          {transactionsQuery.error ? (
-            <section className="rounded-md border border-border bg-surface p-4 text-sm text-muted-foreground">
-              Unable to load transactions. Check the network connection and try again.
-            </section>
-          ) : null}
-          <TransactionTable
-            data={transactionsQuery.data}
-            filters={filterState.filters}
-            isLoading={transactionsQuery.isLoading}
-            onOpen={openTransaction}
-            selectedIds={selectedIds}
-            setFilter={filterState.setFilter}
-            setSelectedIds={setSelectedIds}
-          />
-          <PaginationControls
-            data={transactionsQuery.data}
-            isFetching={transactionsQuery.isFetching}
-            limit={pagination.limit}
-            page={pagination.page}
-            setLimit={pagination.setLimit}
-            setPage={pagination.setPage}
-          />
-        </div>
+    <AppShell title="Transactions" breadcrumb="OPS / TRANSACTIONS">
+      <div className="space-y-4">
+        <TransactionToolbar
+          filters={filterState.filters}
+          onExport={() => setExportOpen(true)}
+          onRefresh={() => void transactionsQuery.refetch()}
+          setFilter={filterState.setFilter}
+        />
+        <TransactionFilters
+          clearAll={filterState.clearAll}
+          clearFilter={filterState.clearFilter}
+          filters={filterState.filters}
+          setFilter={filterState.setFilter}
+        />
+        <BulkActionsBar
+          canDelete={canDelete}
+          onDelete={() => bulkDeleteMutation.mutate()}
+          onExport={() => setExportOpen(true)}
+          onPlaceholder={(action) => bulkActionMutation.mutate(action === 'Bulk tag' ? 'TAG' : 'MARK_REVIEWED')}
+          selectedCount={selectedIds.length}
+        />
+        {transactionsQuery.error ? (
+          <section className="rounded-md border border-border bg-surface p-4 text-sm text-muted-foreground">
+            Unable to load transactions. Check the network connection and try again.
+          </section>
+        ) : null}
+        <TransactionTable
+          data={transactionsQuery.data}
+          filters={filterState.filters}
+          isLoading={transactionsQuery.isLoading}
+          onOpen={openTransaction}
+          selectedIds={selectedIds}
+          setFilter={filterState.setFilter}
+          setSelectedIds={setSelectedIds}
+        />
+        <PaginationControls
+          data={transactionsQuery.data}
+          isFetching={transactionsQuery.isFetching}
+          limit={pagination.limit}
+          page={pagination.page}
+          setLimit={pagination.setLimit}
+          setPage={pagination.setPage}
+        />
       </div>
       <TransactionDrawer client={client} onClose={() => setDrawerId(null)} transactionId={drawerId} />
       <ExportDialog
@@ -1023,6 +996,6 @@ export function TransactionInvestigationConsole() {
         open={exportOpen}
         selectedCount={selectedIds.length}
       />
-    </main>
+    </AppShell>
   );
 }

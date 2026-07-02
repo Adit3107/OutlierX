@@ -141,25 +141,30 @@ enum ActivityEntity {
 }
 
 model User {
-  id                    String        @id @default(uuid())
-  clerkUserId           String        @unique
-  email                 String        @unique
-  firstName             String?
-  lastName              String?
-  avatar                String?
-  status                UserStatus    @default(ACTIVE)
-  currentOrganizationId String?
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  id                      String        @id @default(uuid())
+  clerkUserId             String        @unique
+  email                   String        @unique
+  firstName               String?
+  lastName                String?
+  avatar                  String?
+  status                  UserStatus    @default(ACTIVE)
+  currentOrganizationId   String?
+  theme                   String?       @default("dark")
+  language                String?       @default("en")
+  timezone                String?       @default("UTC")
+  notificationPreferences Json?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
 
   currentOrganization Organization? @relation("CurrentOrganization", fields: [currentOrganizationId], references: [id], onDelete: SetNull)
   memberships         Membership[]
   uploads             Upload[]
   apiKeys             ApiKey[]
-  alerts              Alert[]
-  assignedAlerts      Alert[] @relation("AssignedAnalyst")
+  alerts              Alert[]       @relation("AlertUser")
+  assignedAlerts      Alert[]       @relation("AlertAssignedAnalyst")
   activityLogs        ActivityLog[]
   createdRules        Rule[]
+  decisions           Decision[]
 
   @@index([email])
   @@index([clerkUserId])
@@ -181,17 +186,17 @@ model Organization {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
-  currentUsers User[]        @relation("CurrentOrganization")
-  memberships  Membership[]
-  uploads      Upload[]
-  transactions Transaction[]
-  apiKeys      ApiKey[]
-  alerts       Alert[]
-  rules        Rule[]
+  currentUsers   User[]          @relation("CurrentOrganization")
+  memberships    Membership[]
+  uploads        Upload[]
+  transactions   Transaction[]
+  apiKeys        ApiKey[]
+  alerts         Alert[]
+  rules          Rule[]
   ruleExecutions RuleExecution[]
-  mlPredictions MlPrediction[]
-  decisions Decision[]
-  activityLogs ActivityLog[]
+  mlPredictions  MlPrediction[]
+  activityLogs   ActivityLog[]
+  decisions      Decision[]
 
   @@index([subscriptionPlan])
   @@index([subscriptionStatus])
@@ -299,9 +304,7 @@ model Transaction {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   upload       Upload       @relation(fields: [uploadId], references: [id], onDelete: Cascade)
   ruleExecutions RuleExecution[]
-  mlPrediction MlPrediction?
-  decisions Decision[]
-  alerts Alert[]
+  mlPrediction   MlPrediction?
 
   @@index([organizationId])
   @@index([transactionId])
@@ -333,7 +336,7 @@ model MlPrediction {
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   transaction  Transaction  @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  decisions Decision[]
+  decision     Decision?
 
   @@index([organizationId])
   @@index([transactionId])
@@ -429,7 +432,6 @@ model RuleExecution {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   transaction  Transaction? @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   results      RuleResult[]
-  decisions Decision[]
 
   @@index([organizationId])
   @@index([transactionId])
@@ -459,84 +461,70 @@ model RuleResult {
 }
 
 model Decision {
-  id                String                 @id @default(uuid())
-  organizationId    String
-  transactionId     String
-  ruleExecutionId   String?
-  mlPredictionId    String?
-  ruleScore         Float
-  mlScore           Float
-  finalScore        Float
-  confidence        Float
-  riskLevel         RiskLevel
-  decisionStrategy  String
-  decisionVersion   String
-  explanation       Json
-  recommendation    DecisionRecommendation
-  processedAt       DateTime
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
+  id                 String        @id @default(uuid())
+  organizationId     String
+  transactionId      String        @unique
+  mlPredictionId     String?       @unique
+  userId             String?
+  ruleScore          Int
+  mlScore            Int
+  finalScore         Int
+  confidence         Float
+  riskLevel          RiskLevel
+  decisionStrategy   String
+  decisionVersion    String
+  explanation        Json
+  recommendation     String
+  processedAt        DateTime
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
-  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  transaction   Transaction    @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  ruleExecution RuleExecution? @relation(fields: [ruleExecutionId], references: [id], onDelete: SetNull)
-  mlPrediction  MlPrediction?  @relation(fields: [mlPredictionId], references: [id], onDelete: SetNull)
-  alerts        Alert[]
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  mlPrediction MlPrediction? @relation(fields: [mlPredictionId], references: [id], onDelete: SetNull)
+  alerts       Alert[]
 
   @@index([organizationId])
   @@index([transactionId])
-  @@index([ruleExecutionId])
   @@index([mlPredictionId])
   @@index([riskLevel])
-  @@index([recommendation])
-  @@index([decisionStrategy])
   @@index([processedAt])
-  @@index([createdAt])
   @@index([organizationId, processedAt])
-  @@index([organizationId, transactionId, processedAt])
 }
 
 model Alert {
-  id                String                 @id @default(uuid())
+  id                String        @id @default(uuid())
   organizationId    String
   userId            String?
-  decisionId        String?                @unique
+  decisionId        String?
   transactionId     String?
   assignedAnalystId String?
   severity          AlertSeverity
   title             String
   description       String?
-  riskScore         Float?
-  confidence        Float?
-  triggeredRules    Json?
-  recommendation    DecisionRecommendation?
-  status            AlertStatus            @default(OPEN)
-  isRead            Boolean                @default(false)
-  resolvedAt        DateTime?
-  archivedAt        DateTime?
-  deletedAt         DateTime?
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
+  riskScore         Int?          @default(0)
+  confidence        Float?        @default(0)
+  status            AlertStatus   @default(OPEN)
+  isRead            Boolean       @default(false)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user            User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user            User?        @relation("AlertUser", fields: [userId], references: [id], onDelete: SetNull)
+  assignedAnalyst User?        @relation("AlertAssignedAnalyst", fields: [assignedAnalystId], references: [id], onDelete: SetNull)
   decision        Decision?    @relation(fields: [decisionId], references: [id], onDelete: SetNull)
-  transaction     Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
-  assignedAnalyst User?        @relation("AssignedAnalyst", fields: [assignedAnalystId], references: [id], onDelete: SetNull)
 
   @@index([organizationId])
   @@index([userId])
+  @@index([assignedAnalystId])
   @@index([decisionId])
   @@index([transactionId])
-  @@index([assignedAnalystId])
   @@index([severity])
   @@index([status])
   @@index([isRead])
   @@index([createdAt])
-  @@index([deletedAt])
   @@index([organizationId, severity])
-  @@index([organizationId, status, severity])
-  @@index([organizationId, isRead, createdAt])
+  @@index([organizationId, status])
 }
 
 model ActivityLog {

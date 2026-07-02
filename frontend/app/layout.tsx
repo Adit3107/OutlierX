@@ -25,11 +25,11 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Anomalyze | Financial Anomaly Analysis Console',
+  title: 'OutlierX | Financial Anomaly Analysis Console',
   description:
     'Financial fraud detection and anomaly analysis console for analyst operations.',
   keywords: ['anomaly detection', 'fraud prevention', 'financial analytics', 'transaction analysis'],
-  authors: [{ name: 'Anomalyze Team' }],
+  authors: [{ name: 'OutlierX Team' }],
 };
 
 export const viewport: Viewport = {

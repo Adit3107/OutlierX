@@ -36,7 +36,19 @@ export class ActivityService {
     });
   }
 
-  async list(organizationId: string, pagination: { page: number; limit: number }) {
+  async list(
+    organizationId: string,
+    pagination: {
+      page: number;
+      limit: number;
+      search?: string;
+      action?: string;
+      entity?: ActivityEntity;
+      userId?: string;
+      startDate?: string;
+      endDate?: string;
+    }
+  ) {
     const [items, total] = await this.activityRepository.list(organizationId, pagination);
     const totalPages = Math.ceil(total / pagination.limit);
 
@@ -53,7 +65,8 @@ export class ActivityService {
 export class OrganizationService {
   constructor(
     private organizationRepository: OrganizationRepository,
-    private activityService: ActivityService
+    private activityService: ActivityService,
+    private memberRepository: MemberRepository = new MemberRepository()
   ) {}
 
   async update(
@@ -65,6 +78,9 @@ export class OrganizationService {
       logo?: string | null;
       industry?: string | null;
       website?: string | null;
+      timezone?: string;
+      defaultCurrency?: string;
+      language?: string;
     }
   ) {
     if (payload.slug) {
@@ -86,6 +102,81 @@ export class OrganizationService {
 
     return organization;
   }
+
+  async usage(organizationId: string) {
+    const [members, activeMembers, uploads, apiKeys, storage, transactionsProcessed, alerts] =
+      await this.organizationRepository.usageSummary(organizationId);
+
+    return {
+      members,
+      activeMembers,
+      uploads,
+      apiKeys,
+      storageBytes: storage._sum.fileSize ?? 0,
+      transactionsProcessed,
+      alerts,
+    };
+  }
+
+  async transferOwnership(organizationId: string, actorUserId: string, targetMembershipId: string) {
+    const target = await this.memberRepository.findById(targetMembershipId, organizationId);
+    if (!target) {
+      throw new NotFoundError('Membership not found');
+    }
+
+    const actor = await this.memberRepository.findByUser(organizationId, actorUserId);
+    if (!actor || actor.role !== 'OWNER') {
+      throw new ForbiddenError('Only owners can transfer organization ownership');
+    }
+
+    if (target.status !== 'ACTIVE') {
+      throw new BadRequestError('Ownership can only be transferred to an active member');
+    }
+
+    const updatedTarget = await this.memberRepository.update(target.id, { role: 'OWNER' });
+    if (actor.id !== target.id) {
+      await this.memberRepository.update(actor.id, { role: 'ADMIN' });
+    }
+
+    await this.activityService.log({
+      organizationId,
+      userId: actorUserId,
+      action: 'organization.ownership_transferred',
+      entity: 'ORGANIZATION',
+      entityId: organizationId,
+      metadata: { targetMembershipId, targetUserId: target.userId },
+    });
+
+    return updatedTarget;
+  }
+
+  async delete(organizationId: string, actorUserId: string, confirmName: string) {
+    const organization = await this.organizationRepository.findById(organizationId);
+    if (!organization) {
+      throw new NotFoundError('Organization not found');
+    }
+
+    const actor = await this.memberRepository.findByUser(organizationId, actorUserId);
+    if (!actor || actor.role !== 'OWNER') {
+      throw new ForbiddenError('Only owners can delete organizations');
+    }
+
+    if (organization.name !== confirmName) {
+      throw new BadRequestError('Confirmation name does not match organization name');
+    }
+
+    await this.activityService.log({
+      organizationId,
+      userId: actorUserId,
+      action: 'organization.deleted',
+      entity: 'ORGANIZATION',
+      entityId: organizationId,
+      metadata: { name: organization.name },
+    });
+
+    await this.organizationRepository.delete(organizationId);
+    return { id: organizationId };
+  }
 }
 
 export class MemberService {
@@ -94,8 +185,24 @@ export class MemberService {
     private activityService: ActivityService
   ) {}
 
-  list(organizationId: string) {
-    return this.memberRepository.list(organizationId);
+  async list(
+    organizationId: string,
+    options: {
+      page: number;
+      limit: number;
+      search?: string;
+      role?: Role;
+      status?: MembershipStatus;
+    }
+  ) {
+    const [items, total] = await this.memberRepository.list(organizationId, options);
+    return {
+      items,
+      total,
+      page: options.page,
+      limit: options.limit,
+      totalPages: Math.ceil(total / options.limit),
+    };
   }
 
   async create(
@@ -146,6 +253,17 @@ export class MemberService {
       throw new NotFoundError('Membership not found');
     }
 
+    if (payload.role === 'OWNER') {
+      const actor = await this.memberRepository.findByUser(organizationId, actorUserId);
+      if (!actor || actor.role !== 'OWNER') {
+        throw new ForbiddenError('Only owners can promote another owner');
+      }
+    }
+
+    if (membership.userId === actorUserId && membership.role === 'OWNER' && payload.role && payload.role !== 'OWNER') {
+      throw new ForbiddenError('Owners cannot demote themselves');
+    }
+
     if (membership.role === 'OWNER' && payload.role && payload.role !== 'OWNER') {
       await this.ensureAnotherOwner(organizationId, membership.userId);
     }
@@ -191,7 +309,7 @@ export class MemberService {
   }
 
   private async ensureAnotherOwner(organizationId: string, excludedUserId: string) {
-    const owners = (await this.memberRepository.list(organizationId)).filter(
+    const owners = (await this.memberRepository.listAll(organizationId)).filter(
       (membership) =>
         membership.role === 'OWNER' &&
         membership.status === 'ACTIVE' &&
@@ -276,6 +394,63 @@ export class ApiKeyService {
     return {
       ...revoked,
       keyHash: undefined,
+    };
+  }
+
+  async update(
+    organizationId: string,
+    userId: string,
+    apiKeyId: string,
+    payload: {
+      name?: string;
+      expiresAt?: string | null;
+      status?: ApiKeyStatus;
+      rotate?: boolean;
+    }
+  ) {
+    const apiKey = await this.apiKeyRepository.findById(apiKeyId, organizationId);
+    if (!apiKey) {
+      throw new NotFoundError('API key not found');
+    }
+
+    let rawKey: string | undefined;
+    const data: Prisma.ApiKeyUpdateInput = {};
+
+    if (payload.name !== undefined) {
+      data.name = payload.name;
+    }
+
+    if (payload.expiresAt !== undefined) {
+      data.expiresAt = payload.expiresAt ? new Date(payload.expiresAt) : null;
+      if (data.expiresAt instanceof Date && data.expiresAt <= new Date()) {
+        throw new BadRequestError('API key expiration must be in the future');
+      }
+    }
+
+    if (payload.status !== undefined) {
+      data.status = payload.status;
+    }
+
+    if (payload.rotate) {
+      rawKey = `ak_${crypto.randomBytes(32).toString('hex')}`;
+      data.keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
+      data.status = 'ACTIVE';
+    }
+
+    const updated = await this.apiKeyRepository.update(apiKey.id, data);
+    await this.activityService.log({
+      organizationId,
+      userId,
+      action: payload.rotate ? 'api_key.rotated' : 'api_key.updated',
+      entity: 'API_KEY',
+      entityId: apiKey.id,
+      metadata: { name: updated.name, status: updated.status },
+    });
+
+    return {
+      ...updated,
+      keyHash: undefined,
+      ...(rawKey ? { key: rawKey, keyPreview: `${rawKey.slice(0, 10)}...` } : { keyPreview: `${updated.id.slice(0, 8)}...` }),
     };
   }
 }

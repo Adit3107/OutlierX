@@ -1,27 +1,21 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
-import { UserButton, useAuth } from '@clerk/nextjs';
+import { useAuth } from '@clerk/nextjs';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AxiosProgressEvent } from 'axios';
 import { toast } from 'sonner';
-import { useTheme } from 'next-themes';
 import {
   ChevronLeft,
   ChevronRight,
-  Database,
   FileSpreadsheet,
-  Moon,
   RefreshCw,
   Search,
-  ShieldCheck,
-  Sun,
   Trash2,
   UploadCloud,
-  WalletCards,
   X,
 } from 'lucide-react';
+
 import type {
   AuthContext,
   PaginatedResponse,
@@ -34,6 +28,8 @@ import type {
 } from '@anomaly/shared';
 import { MAX_UPLOAD_SIZE_BYTES, PERMISSIONS } from '@anomaly/shared';
 import { createApiClient } from '../lib/api-client';
+import { AppShell } from './app-shell';
+
 
 function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(' ');
@@ -568,84 +564,7 @@ function TransactionsTable({ uploadId, client }: { uploadId: string | null; clie
   );
 }
 
-function Sidebar() {
-  const items = [
-    { label: 'Overview', icon: Database, href: '/' },
-    { label: 'Data Sources', icon: UploadCloud, active: true, href: '/' },
-    { label: 'Transactions', icon: WalletCards, href: '/transactions' },
-  ];
 
-  return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-56 border-r border-border bg-background lg:flex lg:flex-col">
-      <div className="flex h-14 items-center gap-3 border-b border-border px-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md border border-primary/40 bg-surface text-primary">
-          <ShieldCheck className="h-4 w-4" />
-        </div>
-        <div>
-          <p className="font-display text-sm font-semibold leading-none">Anomalyze</p>
-          <p className="mt-1 font-mono text-[10px] uppercase text-muted-foreground">Fraud Ops</p>
-        </div>
-      </div>
-      <nav className="flex-1 space-y-1 px-2 py-3">
-        {items.map((item) => (
-          <Link
-            key={item.label}
-            className={cn(
-              'flex h-9 w-full items-center gap-2 rounded-md px-2 text-left text-sm transition-colors duration-200 ease-out',
-              item.active
-                ? 'border border-border bg-surface-alt text-foreground'
-                : 'text-muted-foreground hover:bg-surface hover:text-foreground'
-            )}
-            href={item.href}
-          >
-            <item.icon className={cn('h-4 w-4', item.active && 'text-primary')} />
-            <span>{item.label}</span>
-          </Link>
-        ))}
-      </nav>
-      <div className="border-t border-border p-3">
-        <div className="rounded-md border border-border bg-surface p-3">
-          <p className="text-xs font-medium uppercase text-muted-foreground">Ingest health</p>
-          <div className="mt-3 flex items-center justify-between">
-            <span className="font-mono text-xs text-foreground">local-storage</span>
-            <span className="font-mono text-xs text-primary">READY</span>
-          </div>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-function Header({ auth }: { auth: AuthContext | null }) {
-  const { resolvedTheme, setTheme } = useTheme();
-  const isLight = resolvedTheme === 'light';
-
-  return (
-    <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur-sm">
-      <div className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-4 py-2 lg:px-6">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-mono">OPS / INGESTION</span>
-            <ChevronRight className="h-3 w-3" />
-            <span className="truncate">{auth?.organization.name ?? 'Secure workspace'}</span>
-          </div>
-          <h1 className="mt-1 font-display text-2xl font-semibold leading-none">Data Ingestion Console</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            aria-label="Toggle theme"
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground transition-colors duration-200 ease-out hover:text-foreground"
-            onClick={() => setTheme(isLight ? 'dark' : 'light')}
-            type="button"
-          >
-            {isLight ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-          </button>
-          <UserButton afterSignOutUrl="/" />
-        </div>
-      </div>
-    </header>
-  );
-}
 
 export function OperatorConsole({ auth }: { auth: AuthContext | null }) {
   const { getToken } = useAuth();
@@ -751,85 +670,81 @@ export function OperatorConsole({ auth }: { auth: AuthContext | null }) {
   };
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <Sidebar />
-      <div className="lg:pl-56">
-        <Header auth={auth} />
-        <div className="space-y-4 px-4 py-4 lg:px-6">
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <section className="rounded-md border border-border bg-surface p-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground">Uploads</p>
-              <p className="mt-2 font-display text-[32px] font-semibold leading-[1.15] tabular-nums">
-                {uploadsQuery.data?.total ?? 0}
-              </p>
-              <p className="mt-2 font-mono text-xs text-muted-foreground">Organization total</p>
-            </section>
-            <section className="rounded-md border border-border bg-surface p-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground">Stored Rows</p>
-              <p className="mt-2 font-display text-[32px] font-semibold leading-[1.15] tabular-nums">
-                {uploads.reduce((sum, upload) => sum + upload.processedRows, 0)}
-              </p>
-              <p className="mt-2 font-mono text-xs text-muted-foreground">Imported transactions</p>
-            </section>
-            <section className="rounded-md border border-border bg-surface p-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground">Failed Rows</p>
-              <p className="mt-2 font-display text-[32px] font-semibold leading-[1.15] tabular-nums">
-                {uploads.reduce((sum, upload) => sum + upload.failedRows, 0)}
-              </p>
-              <p className="mt-2 font-mono text-xs text-muted-foreground">Validation rejects</p>
-            </section>
-            <section className="rounded-md border border-border bg-surface p-4">
-              <p className="text-xs font-medium uppercase text-muted-foreground">Latest Status</p>
-              <div className="mt-3">{selectedUpload ? <UploadStatusBadge status={selectedUpload.status} /> : null}</div>
-              <p className="mt-3 font-mono text-xs text-muted-foreground">Synchronous parser</p>
-            </section>
-          </div>
+    <AppShell title="Data Sources" breadcrumb="OPS / INGESTION">
+      <div className="space-y-4">
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <section className="rounded-md border border-border bg-surface p-4">
+            <p className="text-xs font-medium uppercase text-muted-foreground">Uploads</p>
+            <p className="mt-2 font-display text-[32px] font-semibold leading-[1.15] tabular-nums">
+              {uploadsQuery.data?.total ?? 0}
+            </p>
+            <p className="mt-2 font-mono text-xs text-muted-foreground">Organization total</p>
+          </section>
+          <section className="rounded-md border border-border bg-surface p-4">
+            <p className="text-xs font-medium uppercase text-muted-foreground">Stored Rows</p>
+            <p className="mt-2 font-display text-[32px] font-semibold leading-[1.15] tabular-nums">
+              {uploads.reduce((sum, upload) => sum + upload.processedRows, 0)}
+            </p>
+            <p className="mt-2 font-mono text-xs text-muted-foreground">Imported transactions</p>
+          </section>
+          <section className="rounded-md border border-border bg-surface p-4">
+            <p className="text-xs font-medium uppercase text-muted-foreground">Failed Rows</p>
+            <p className="mt-2 font-display text-[32px] font-semibold leading-[1.15] tabular-nums">
+              {uploads.reduce((sum, upload) => sum + upload.failedRows, 0)}
+            </p>
+            <p className="mt-2 font-mono text-xs text-muted-foreground">Validation rejects</p>
+          </section>
+          <section className="rounded-md border border-border bg-surface p-4">
+            <p className="text-xs font-medium uppercase text-muted-foreground">Latest Status</p>
+            <div className="mt-3">{selectedUpload ? <UploadStatusBadge status={selectedUpload.status} /> : null}</div>
+            <p className="mt-3 font-mono text-xs text-muted-foreground">Synchronous parser</p>
+          </section>
+        </div>
 
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="space-y-4">
-              <UploadDropzone
-                disabled={!canUpload || uploadMutation.isPending}
-                error={fileError}
-                file={file}
-                onFile={(nextFile) => {
-                  setFile(nextFile);
-                  setProgress(0);
-                }}
-                onSubmit={submitUpload}
-              />
-              <UploadProgress progress={progress} isUploading={uploadMutation.isPending} />
-              <UploadHistoryTable
-                canDelete={canDelete}
-                onDelete={setDeleteTarget}
-                onSelect={(upload) => setSelectedUploadId(upload.id)}
-                selectedId={selectedUpload?.id ?? null}
-                uploads={uploads}
-              />
-              <TransactionsTable client={client} uploadId={selectedUpload?.id ?? null} />
-            </div>
-            <div className="space-y-4">
-              <UploadSummary upload={selectedUpload} />
-              <ValidationErrors errors={getErrorSummary(selectedUpload)} />
-              <section className="rounded-md border border-border bg-surface p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <h2 className="font-display text-lg font-semibold">Controls</h2>
-                    <p className="text-xs text-muted-foreground">Refresh ingestion state</p>
-                  </div>
-                  <button
-                    aria-label="Refresh uploads"
-                    className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:text-foreground"
-                    onClick={() => void queryClient.invalidateQueries({ queryKey: ['uploads'] })}
-                    type="button"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </button>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="space-y-4">
+            <UploadDropzone
+              disabled={!canUpload || uploadMutation.isPending}
+              error={fileError}
+              file={file}
+              onFile={(nextFile) => {
+                setFile(nextFile);
+                setProgress(0);
+              }}
+              onSubmit={submitUpload}
+            />
+            <UploadProgress progress={progress} isUploading={uploadMutation.isPending} />
+            <UploadHistoryTable
+              canDelete={canDelete}
+              onDelete={setDeleteTarget}
+              onSelect={(upload) => setSelectedUploadId(upload.id)}
+              selectedId={selectedUpload?.id ?? null}
+              uploads={uploads}
+            />
+            <TransactionsTable client={client} uploadId={selectedUpload?.id ?? null} />
+          </div>
+          <div className="space-y-4">
+            <UploadSummary upload={selectedUpload} />
+            <ValidationErrors errors={getErrorSummary(selectedUpload)} />
+            <section className="rounded-md border border-border bg-surface p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-display text-lg font-semibold">Controls</h2>
+                  <p className="text-xs text-muted-foreground">Refresh ingestion state</p>
                 </div>
-                <div className="mt-4 rounded-md border border-border bg-surface-alt p-3 font-mono text-xs text-muted-foreground">
-                  CSV only. Required columns: transaction_id, timestamp, amount, currency, merchant.
-                </div>
-              </section>
-            </div>
+                <button
+                  aria-label="Refresh uploads"
+                  className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:text-foreground"
+                  onClick={() => void queryClient.invalidateQueries({ queryKey: ['uploads'] })}
+                  type="button"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="mt-4 rounded-md border border-border bg-surface-alt p-3 font-mono text-xs text-muted-foreground">
+                CSV only. Required columns: transaction_id, timestamp, amount, currency, merchant.
+              </div>
+            </section>
           </div>
         </div>
       </div>
@@ -843,6 +758,6 @@ export function OperatorConsole({ auth }: { auth: AuthContext | null }) {
         }}
         upload={deleteTarget}
       />
-    </main>
+    </AppShell>
   );
 }

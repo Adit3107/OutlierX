@@ -3,6 +3,13 @@ import { PERMISSIONS } from '@anomaly/shared';
 import { HealthController } from '../controllers/health.controller.js';
 import { AuthController } from '../controllers/auth.controller.js';
 import {
+  AdminController,
+  OpenApiController,
+  ProfileController,
+  SettingsController,
+  SystemHealthController,
+} from '../controllers/enterprise.controller.js';
+import {
   ActivityController,
   ApiKeyController,
   MemberController,
@@ -17,17 +24,23 @@ import {
   AnalyticsController,
   DashboardController,
 } from '../modules/dashboard/controllers/dashboard.controller.js';
-import { requireAuth, requirePermission } from '../middlewares/auth.middleware.js';
+import { requireAuth, requirePermission, requireRole } from '../middlewares/auth.middleware.js';
 import { uploadCsvMiddleware } from '../middlewares/upload.middleware.js';
 import { validateBody, validateParams, validateQuery } from '../middlewares/validation.middleware.js';
 import {
   apiKeyCreateValidator,
   apiKeyQueryValidator,
+  apiKeyUpdateValidator,
+  activityQueryValidator,
   idParamsValidator,
   memberCreateValidator,
+  memberQueryValidator,
   memberUpdateValidator,
+  organizationDeleteValidator,
+  organizationTransferValidator,
   organizationUpdateValidator,
-  paginationQueryValidator,
+  profileUpdateValidator,
+  settingsUpdateValidator,
   transactionQueryValidator,
   uploadQueryValidator,
   alertBulkActionValidator,
@@ -46,6 +59,13 @@ import {
   MemberService,
   OrganizationService,
 } from '../services/foundation.service.js';
+import {
+  AdminService,
+  OpenApiService,
+  ProfileService,
+  SettingsService,
+  SystemHealthService,
+} from '../services/enterprise.service.js';
 import {
   TransactionRepository,
   UploadRepository,
@@ -95,6 +115,11 @@ const apiRouter = Router();
 
 const healthController = new HealthController();
 const authController = new AuthController();
+const profileController = new ProfileController(new ProfileService());
+const settingsController = new SettingsController(new SettingsService());
+const systemHealthController = new SystemHealthController(new SystemHealthService());
+const adminController = new AdminController(new AdminService());
+const openApiController = new OpenApiController(new OpenApiService());
 
 const activityService = new ActivityService(new ActivityRepository());
 const organizationController = new OrganizationController(
@@ -170,10 +195,37 @@ const analyticsController = new AnalyticsController(analyticsService);
 apiRouter.get('/health', healthController.getHealth);
 apiRouter.get('/status', healthController.getStatus);
 apiRouter.get('/version', healthController.getVersion);
+apiRouter.get('/openapi.json', openApiController.get);
 
 apiRouter.use(requireAuth);
 
 apiRouter.get('/auth/me', authController.me);
+
+apiRouter.get('/profile', requirePermission(PERMISSIONS.PROFILE_READ), profileController.get);
+apiRouter.patch(
+  '/profile',
+  requirePermission(PERMISSIONS.PROFILE_UPDATE),
+  validateBody(profileUpdateValidator),
+  profileController.update
+);
+apiRouter.get('/settings', requirePermission(PERMISSIONS.SETTINGS_READ), settingsController.get);
+apiRouter.patch(
+  '/settings',
+  requirePermission(PERMISSIONS.SETTINGS_UPDATE),
+  validateBody(settingsUpdateValidator),
+  settingsController.update
+);
+apiRouter.get(
+  '/system/health',
+  requirePermission(PERMISSIONS.SYSTEM_HEALTH_READ),
+  systemHealthController.get
+);
+apiRouter.get(
+  '/admin/dashboard',
+  requirePermission(PERMISSIONS.ADMIN_READ),
+  requireRole('OWNER', 'ADMIN'),
+  adminController.dashboard
+);
 
 apiRouter.get(
   '/dashboard/summary',
@@ -232,8 +284,30 @@ apiRouter.patch(
   validateBody(organizationUpdateValidator),
   organizationController.update
 );
+apiRouter.get(
+  '/organization/usage',
+  requirePermission(PERMISSIONS.ORGANIZATION_READ),
+  organizationController.usage
+);
+apiRouter.post(
+  '/organization/transfer-ownership',
+  requirePermission(PERMISSIONS.ORGANIZATION_TRANSFER),
+  validateBody(organizationTransferValidator),
+  organizationController.transferOwnership
+);
+apiRouter.delete(
+  '/organization',
+  requirePermission(PERMISSIONS.ORGANIZATION_DELETE),
+  validateBody(organizationDeleteValidator),
+  organizationController.delete
+);
 
-apiRouter.get('/members', requirePermission(PERMISSIONS.MEMBERS_READ), memberController.list);
+apiRouter.get(
+  '/members',
+  requirePermission(PERMISSIONS.MEMBERS_READ),
+  validateQuery(memberQueryValidator),
+  memberController.list
+);
 apiRouter.post(
   '/members',
   requirePermission(PERMISSIONS.MEMBERS_CREATE),
@@ -253,6 +327,43 @@ apiRouter.delete(
   validateParams(idParamsValidator),
   memberController.delete
 );
+apiRouter.get(
+  '/team',
+  requirePermission(PERMISSIONS.MEMBERS_READ),
+  validateQuery(memberQueryValidator),
+  memberController.list
+);
+apiRouter.post(
+  '/team',
+  requirePermission(PERMISSIONS.MEMBERS_CREATE),
+  validateBody(memberCreateValidator),
+  memberController.create
+);
+apiRouter.post(
+  '/team/invite',
+  requirePermission(PERMISSIONS.MEMBERS_CREATE),
+  validateBody(memberCreateValidator),
+  memberController.create
+);
+apiRouter.patch(
+  '/team/:id',
+  requirePermission(PERMISSIONS.MEMBERS_UPDATE),
+  validateParams(idParamsValidator),
+  validateBody(memberUpdateValidator),
+  memberController.update
+);
+apiRouter.delete(
+  '/team/:id',
+  requirePermission(PERMISSIONS.MEMBERS_DELETE),
+  validateParams(idParamsValidator),
+  memberController.delete
+);
+apiRouter.post(
+  '/team/:id/resend-invitation',
+  requirePermission(PERMISSIONS.MEMBERS_CREATE),
+  validateParams(idParamsValidator),
+  memberController.resendInvitation
+);
 
 apiRouter.get(
   '/api-keys',
@@ -266,6 +377,13 @@ apiRouter.post(
   validateBody(apiKeyCreateValidator),
   apiKeyController.create
 );
+apiRouter.patch(
+  '/api-keys/:id',
+  requirePermission(PERMISSIONS.API_KEYS_UPDATE),
+  validateParams(idParamsValidator),
+  validateBody(apiKeyUpdateValidator),
+  apiKeyController.update
+);
 apiRouter.delete(
   '/api-keys/:id',
   requirePermission(PERMISSIONS.API_KEYS_DELETE),
@@ -276,7 +394,7 @@ apiRouter.delete(
 apiRouter.get(
   '/activity',
   requirePermission(PERMISSIONS.ACTIVITY_READ),
-  validateQuery(paginationQueryValidator),
+  validateQuery(activityQueryValidator),
   activityController.list
 );
 

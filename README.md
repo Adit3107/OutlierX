@@ -10,6 +10,61 @@ OutlierX is a multi-tenant SaaS foundation for financial anomaly detection. This
 - ML service: FastAPI inference service with Isolation Forest anomaly prediction
 - Shared package: common constants, types, schemas, and utilities
 
+## Enterprise Phase 1 Completion
+
+OutlierX now includes the enterprise SaaS surfaces required for production readiness while continuing to consume the existing authentication, organization, RBAC, upload, investigation, rules, ML, decision, analytics, and alert modules.
+
+Frontend management surfaces:
+
+- `/organization`: organization profile, logo URL, industry, website, timezone, default currency, language, usage summary, owner-only transfer ownership, and owner-only organization deletion.
+- `/team`: invite placeholder, role changes, suspend/reactivate, remove, resend invitation placeholder, search, filters, and pagination.
+- `/profile`: avatar, name, email, organization, role, joined date, recent activity, theme, language, timezone, and notification preferences.
+- `/api-keys`: generate, copy-once raw key, rename, rotate, revoke, expiration, status, and last-used display.
+- `/settings`: General, Appearance, Notifications, Security, Organization, API, Billing placeholder, Support, and About sections.
+- `/subscription`: UI-only Free, Pro, and Enterprise plan comparison with disabled upgrade buttons. Stripe is intentionally not integrated.
+- `/admin`: admin-only global dashboard for organizations, users, uploads, transactions, alerts, activity, API keys, and system health.
+- `/system-health`: backend, ML service, database, storage, API version, model version, and environment status with one-minute polling.
+- `/activity`: searchable and filterable audit logs with pagination.
+- `/help`: in-app documentation for onboarding, uploads, scores, rules, ML, decisions, alerts, analytics, API keys, and FAQ.
+
+Enterprise API additions:
+
+- `GET /api/v1/profile`
+- `PATCH /api/v1/profile`
+- `GET /api/v1/settings`
+- `PATCH /api/v1/settings`
+- `GET /api/v1/admin/dashboard`
+- `GET /api/v1/system/health`
+- `GET /api/v1/activity`
+- `POST /api/v1/team/invite`
+- `PATCH /api/v1/team/:id`
+- `DELETE /api/v1/team/:id`
+- `POST /api/v1/team/:id/resend-invitation`
+- `PATCH /api/v1/api-keys/:id`
+- `GET /api/v1/openapi.json`
+
+Security posture:
+
+- All enterprise endpoints are protected by Clerk authentication and RBAC.
+- Owners can perform all management actions, including ownership transfer and organization deletion.
+- Admins can manage the workspace except ownership transfer and organization deletion.
+- Analysts receive read-oriented management access plus existing analyst operations.
+- Viewers have no management write access.
+- API keys are stored as SHA-256 hashes, and raw keys are returned only on creation or rotation.
+- Administrative changes write activity logs for audit review.
+
+Deployment readiness:
+
+- Environment variables are validated at backend startup.
+- Redis, Kafka, Docker, and Stripe are intentionally not introduced in Phase 1.
+- OpenAPI documentation is exposed as generated JSON at `/api/v1/openapi.json`.
+- Seed data creates multiple organizations, users across roles/statuses, API keys, uploads, transactions, ML predictions, decisions, alerts, and activity logs.
+- Recommended verification before deployment:
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm run build`
+  - `npm run prisma:seed -w @anomaly/backend`
+
 ## Database Schema
 
 The Prisma schema uses UUID primary keys, `createdAt`, `updatedAt`, relations, unique constraints, and indexes for production use.

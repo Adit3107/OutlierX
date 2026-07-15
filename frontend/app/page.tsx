@@ -366,14 +366,12 @@ function SignedOutLanding() {
             <span className="text-severity-medium">LOCKED</span>
           </div>
         </div>
-        <SignInButton mode="modal">
-          <button
-            className="mt-4 h-10 w-full rounded-lg bg-primary-strong px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-strong/90"
-            type="button"
-          >
-            Sign in to OutlierX
-          </button>
-        </SignInButton>
+        <Link
+          href="/sign-in"
+          className="mt-4 flex h-10 w-full items-center justify-center rounded-lg bg-primary-strong px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-strong/90"
+        >
+          Sign in to OutlierX
+        </Link>
       </section>
     </main>
   );

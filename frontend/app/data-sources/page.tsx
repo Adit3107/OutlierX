@@ -6,6 +6,8 @@ import { ShieldCheck } from 'lucide-react';
 import { OperatorConsole } from '../../components/operator-console';
 import { useAuthData } from '../../providers/auth-provider';
 
+import Link from 'next/link';
+
 function SignedOutState() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
@@ -22,14 +24,12 @@ function SignedOutState() {
         <p className="mt-4 text-sm text-muted-foreground">
           Authenticate to upload and manage transaction data sources.
         </p>
-        <SignInButton mode="modal">
-          <button
-            className="mt-4 h-10 w-full rounded-lg bg-primary-strong px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-strong/90"
-            type="button"
-          >
-            Sign in
-          </button>
-        </SignInButton>
+        <Link
+          href="/sign-in"
+          className="mt-4 flex h-10 w-full items-center justify-center rounded-lg bg-primary-strong px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-strong/90"
+        >
+          Sign in
+        </Link>
       </section>
     </main>
   );

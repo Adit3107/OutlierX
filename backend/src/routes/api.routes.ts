@@ -192,10 +192,14 @@ const alertController = new AlertController(alertService);
 const dashboardController = new DashboardController(dashboardService);
 const analyticsController = new AnalyticsController(analyticsService);
 
+import { WebhookController } from '../controllers/webhook.controller.js';
+const webhookController = new WebhookController();
+
 apiRouter.get('/health', healthController.getHealth);
 apiRouter.get('/status', healthController.getStatus);
 apiRouter.get('/version', healthController.getVersion);
 apiRouter.get('/openapi.json', openApiController.get);
+apiRouter.post('/webhooks/clerk', webhookController.handleClerk);
 
 apiRouter.use(requireAuth);
 

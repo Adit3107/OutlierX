@@ -25,6 +25,7 @@ const environmentSchema = z.object({
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z
     .string()
     .min(1, 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is required'),
+  CLERK_WEBHOOK_SECRET: z.string().optional(),
   JWT_SECRET: z.string().min(1).optional(),
   STORAGE_PROVIDER: z.string().default('dummy'),
   STORAGE_BUCKET: z.string().default('dummy'),
@@ -62,6 +63,7 @@ export const config = {
     clerkPublishableKey:
       parsedConfig.data.CLERK_PUBLISHABLE_KEY ??
       parsedConfig.data.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    clerkWebhookSecret: parsedConfig.data.CLERK_WEBHOOK_SECRET,
     jwtSecret: parsedConfig.data.JWT_SECRET,
   },
   storage: {

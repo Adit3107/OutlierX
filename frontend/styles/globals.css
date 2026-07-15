@@ -165,3 +165,47 @@
     animation: none;
   }
 }
+
+/* ──────────────────────────────────────────────────────── Clerk Dark Theme Overrides */
+.cl-card,
+[class*="cl-card"] {
+  background-color: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.cl-footer,
+[class*="cl-footer"] {
+  background-color: var(--surface) !important;
+  background-image: none !important;
+  border-top: 1px solid var(--border) !important;
+  padding-top: 1.25rem !important;
+  padding-bottom: 1.25rem !important;
+}
+
+/* Hide Clerk branding, secured by clerk, development mode badges completely */
+.cl-internal-badge,
+.cl-dev-mode-badge,
+.cl-footer > div:last-child,
+[class*="cl-footer"] > div:last-child {
+  display: none !important;
+}
+
+/* Ensure the action links are properly styled */
+.cl-footerActionText,
+[class*="cl-footerActionText"] {
+  color: var(--muted-foreground) !important;
+  font-size: 0.8rem !important;
+}
+
+.cl-footerActionLink,
+[class*="cl-footerActionLink"] {
+  color: var(--primary) !important;
+  font-weight: 600 !important;
+}
+
+.cl-footerActionLink:hover,
+[class*="cl-footerActionLink"]:hover {
+  color: var(--primary-strong) !important;
+  text-decoration: underline !important;
+}
+

@@ -5,6 +5,8 @@ import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
 import { ShieldCheck } from 'lucide-react';
 import { RulePlaygroundPageContent } from '../../../components/rules/rule-console';
 
+import Link from 'next/link';
+
 function SignedOutState() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
@@ -19,11 +21,12 @@ function SignedOutState() {
           </div>
         </div>
         <p className="mt-4 text-sm text-muted-foreground">Authenticate to test rule evaluations.</p>
-        <SignInButton mode="modal">
-          <button className="mt-4 h-9 w-full rounded-md bg-primary-strong px-3 text-sm font-medium text-primary-foreground hover:bg-primary-strong/90" type="button">
-            Sign in
-          </button>
-        </SignInButton>
+        <Link
+          href="/sign-in"
+          className="mt-4 flex h-9 w-full items-center justify-center rounded-md bg-primary-strong px-3 text-sm font-medium text-primary-foreground hover:bg-primary-strong/90"
+        >
+          Sign in
+        </Link>
       </section>
     </main>
   );

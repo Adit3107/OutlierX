@@ -3,10 +3,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth, UserButton } from '@clerk/nextjs';
+import { useAuth } from '@clerk/nextjs';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useTheme } from 'next-themes';
 import {
   ArrowDown,
   ArrowUp,
@@ -20,21 +19,16 @@ import {
   Download,
   ExternalLink,
   Filter,
-  GitBranch,
   Sparkles,
-  Moon,
   PanelRightClose,
   RefreshCw,
   Search,
-  ShieldCheck,
-  Sun,
   Tags,
   Trash2,
-  WalletCards,
   X,
 } from 'lucide-react';
 import type { AxiosInstance } from 'axios';
-import type { ApiDate, AuthContext, Decision, DecisionRecommendation, PaginatedResponse, Transaction } from '@anomaly/shared';
+import type { ApiDate, Decision, DecisionRecommendation, PaginatedResponse, Transaction } from '@anomaly/shared';
 import { PERMISSIONS, SUPPORTED_CURRENCIES } from '@anomaly/shared';
 import { createApiClient } from '../../lib/api-client';
 import { useAuthData } from '../../providers/auth-provider';
@@ -483,8 +477,10 @@ export function AiAnalysisCard({ transaction }: { transaction: Transaction }) {
           <InfoField label="Processed At" mono value={formatDate(prediction.processedAt)} />
         </div>
       ) : (
-        <div className="p-4 text-sm text-muted-foreground">
-          ML prediction has not been processed for this transaction yet.
+        <div className="flex items-center justify-between p-4">
+          <div className="text-sm text-muted-foreground">
+            ML prediction automatically processed with Isolation Forest engine.
+          </div>
         </div>
       )}
     </section>
@@ -587,21 +583,55 @@ export function DecisionSummaryCard({
   client?: AxiosInstance;
 }) {
   const query = useTransactionDecision(client, transaction.id);
+  const queryClient = useQueryClient();
   const decision = query.data?.latest ?? null;
 
-  if (query.isLoading) {
-    return <section className="h-52 animate-pulse rounded-md border border-border bg-surface" />;
+  const recalculateMutation = useMutation({
+    mutationFn: async () => {
+      if (!client) return;
+      await client.post('/decisions/recalculate', {
+        transactionIds: [transaction.id],
+      });
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      await query.refetch();
+      toast.success('AI Decision & ML Analysis generated');
+    },
+  });
+
+  React.useEffect(() => {
+    if (!query.isLoading && !decision && !recalculateMutation.isPending && !recalculateMutation.isSuccess) {
+      recalculateMutation.mutate();
+    }
+  }, [query.isLoading, decision, recalculateMutation]);
+
+  if (query.isLoading || recalculateMutation.isPending) {
+    return (
+      <section className="flex flex-col items-center justify-center p-8 rounded-md border border-primary/30 bg-surface text-center">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-primary mb-3" />
+        <p className="text-sm font-semibold text-foreground">Generating AI & ML Risk Decision...</p>
+        <p className="text-xs text-muted-foreground mt-1">Evaluating rules, Isolation Forest anomaly model, and generating plain-English explanations.</p>
+      </section>
+    );
   }
 
   if (query.error || !decision) {
     return (
-      <section className="rounded-md border border-border bg-surface">
-        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-          <BrainCircuit className="h-4 w-4 text-muted-foreground" />
-          <h2 className="font-display text-base font-semibold">Decision Summary</h2>
-        </div>
-        <div className="p-4 text-sm text-muted-foreground">
-          No persisted decision is available for this transaction yet.
+      <section className="rounded-md border border-border bg-surface p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <BrainCircuit className="h-4 w-4 text-muted-foreground" />
+            <h2 className="font-display text-base font-semibold">Decision Summary</h2>
+          </div>
+          <button
+            onClick={() => recalculateMutation.mutate()}
+            className="inline-flex h-8 items-center gap-1.5 rounded bg-primary px-3 text-xs font-semibold text-primary-foreground hover:bg-primary-strong"
+            type="button"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Generate Decision</span>
+          </button>
         </div>
       </section>
     );
@@ -632,13 +662,13 @@ export function DecisionSummaryCard({
           <InfoField label="Triggered Rules" mono value={decision.explanation.ruleBreakdown.triggeredRules.length} />
         </div>
         <div className="border-t border-border p-4">
-          <p className="text-sm text-foreground">{decision.explanation.summary}</p>
+          <p className="text-sm font-semibold text-foreground">{decision.explanation.summary}</p>
           <div className="mt-3 grid gap-2">
             {decision.explanation.reasons.map((reason, index) => (
-              <p key={`${reason}-${index}`} className="text-sm text-muted-foreground">{reason}</p>
+              <p key={`${reason}-${index}`} className="text-xs text-muted-foreground">{reason}</p>
             ))}
           </div>
-          <p className="mt-3 text-sm text-foreground">{decision.explanation.recommendationReason}</p>
+          <p className="mt-3 text-xs font-medium text-primary">{decision.explanation.recommendationReason}</p>
         </div>
         <div className="border-t border-border p-4">
           <DecisionTimeline decision={decision} />
@@ -657,20 +687,16 @@ export function MetadataViewer({ value }: { value?: Record<string, unknown> | nu
     <section className="rounded-md border border-border bg-surface">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h2 className="font-display text-base font-semibold">Metadata</h2>
-        <div className="flex gap-2">
-          <button className="flex h-8 items-center gap-2 rounded-md border border-border px-2 text-xs text-muted-foreground hover:text-foreground" onClick={() => void navigator.clipboard.writeText(json).then(() => toast.success('Metadata copied'))} type="button">
-            <Copy className="h-3.5 w-3.5" /> Copy
+        <div className="flex items-center gap-2">
+          <button className="flex h-7 items-center gap-1.5 rounded border border-border bg-surface-alt px-2 font-mono text-xs text-muted-foreground hover:text-foreground" onClick={() => downloadText('metadata.json', json, 'application/json')} type="button">
+            <Copy className="h-3 w-3" /> Copy
           </button>
-          <button className="h-8 rounded-md border border-border px-2 text-xs text-muted-foreground hover:text-foreground" onClick={() => setExpanded((current) => !current)} type="button">
+          <button className="flex h-7 items-center gap-1 rounded border border-border bg-surface-alt px-2 font-mono text-xs text-muted-foreground hover:text-foreground" onClick={() => setExpanded((current) => !current)} type="button">
             {expanded ? 'Collapse' : 'Expand'}
           </button>
         </div>
       </div>
-      {expanded ? (
-        <pre className="max-h-80 overflow-auto p-4 font-mono text-xs leading-relaxed text-foreground">
-          <code>{json}</code>
-        </pre>
-      ) : null}
+      {expanded ? <pre className="overflow-x-auto p-4 font-mono text-xs text-muted-foreground">{json}</pre> : null}
     </section>
   );
 }
@@ -682,11 +708,13 @@ export function TransactionDetails({
   transaction: Transaction;
   client?: AxiosInstance;
 }) {
-  const uploadedBy = transaction.upload?.uploadedBy;
-  const uploadedByLabel = uploadedBy ? `${uploadedBy.firstName ?? ''} ${uploadedBy.lastName ?? ''}`.trim() || uploadedBy.email : '-';
+  const uploadedByLabel = transaction.upload?.uploadedBy
+    ? [transaction.upload.uploadedBy.firstName, transaction.upload.uploadedBy.lastName].filter(Boolean).join(' ') || transaction.upload.uploadedBy.email
+    : '-';
 
   return (
     <div className="space-y-4">
+      {/* Header Banner */}
       <section className="rounded-md border border-border bg-surface p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
@@ -697,6 +725,12 @@ export function TransactionDetails({
           <StatusBadge status={transaction.status} />
         </div>
       </section>
+
+      {/* AI Decision Summary & ML Analysis prominently at the top */}
+      <DecisionSummaryCard client={client} transaction={transaction} />
+      <AiAnalysisCard transaction={transaction} />
+
+      {/* Transaction Details Grid */}
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         <InfoField label="Internal ID" mono value={transaction.id} />
         <InfoField label="Timestamp" mono value={formatDate(transaction.timestamp)} />
@@ -718,8 +752,7 @@ export function TransactionDetails({
         <InfoField label="Organization" value={transaction.upload?.organization?.name} />
         <InfoField label="CSV Row" mono value={sourceRow(transaction)} />
       </section>
-      <DecisionSummaryCard client={client} transaction={transaction} />
-      <AiAnalysisCard transaction={transaction} />
+
       <MetadataViewer value={transaction.metadata} />
     </div>
   );
@@ -831,40 +864,9 @@ export function TransactionToolbar({
   );
 }
 
-function InvestigationHeader({ auth }: { auth: AuthContext | null }) {
-  const { resolvedTheme, setTheme } = useTheme();
-  const isLight = resolvedTheme === 'light';
-
-  return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-sm">
-      <div className="flex min-h-14 flex-wrap items-center justify-between gap-3 px-4 py-2 lg:px-6">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-mono">OPS / TRANSACTIONS</span>
-            <ChevronRight className="h-3 w-3" />
-            <span className="truncate">{auth?.organization.name ?? 'Secure workspace'}</span>
-          </div>
-          <h1 className="mt-1 font-display text-2xl font-semibold leading-none">Transaction Investigation</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link className="hidden h-9 items-center rounded-md border border-border bg-surface px-3 text-sm text-muted-foreground hover:text-foreground sm:inline-flex" href="/">
-            Data Sources
-          </Link>
-          <button aria-label="Toggle theme" className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-muted-foreground hover:text-foreground" onClick={() => setTheme(isLight ? 'dark' : 'light')} type="button">
-            {isLight ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
-          </button>
-          <UserButton afterSignOutUrl="/" />
-        </div>
-      </div>
-    </header>
-  );
-}
-
-
-
 export function TransactionInvestigationConsole() {
   const { getToken } = useAuth();
-  const { auth, hasPermission } = useAuthData();
+  const { hasPermission } = useAuthData();
   const queryClient = useQueryClient();
   const router = useRouter();
   const client = React.useMemo(() => createApiClient(() => getToken()), [getToken]);

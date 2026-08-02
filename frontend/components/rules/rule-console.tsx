@@ -3,25 +3,19 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth, UserButton } from '@clerk/nextjs';
+import { useAuth } from '@clerk/nextjs';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useTheme } from 'next-themes';
 import {
   ArrowLeft,
-  ChevronRight,
   Copy,
   FlaskConical,
   GitBranch,
-  Moon,
   Plus,
   RefreshCw,
   Save,
   Search,
-  ShieldCheck,
-  Sun,
   Trash2,
-  WalletCards,
 } from 'lucide-react';
 import type {
   ApiDate,

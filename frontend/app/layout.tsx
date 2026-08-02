@@ -11,24 +11,30 @@ import { AuthProvider } from '../providers/auth-provider';
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
+  display: 'swap',
+  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
 });
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-display',
-  weight: ['500', '600'],
+  weight: ['500', '600', '700'],
+  display: 'swap',
+  fallback: ['system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
 });
 
 const jetBrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
+  display: 'swap',
+  fallback: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
 });
 
 export const metadata: Metadata = {
-  title: 'OutlierX | Financial Anomaly Analysis Console',
+  title: 'OutlierX | AI-Powered Fraud & Anomaly Detection Platform',
   description:
-    'Financial fraud detection and anomaly analysis console for analyst operations.',
-  keywords: ['anomaly detection', 'fraud prevention', 'financial analytics', 'transaction analysis'],
+    'OutlierX scans every transaction with AI and instantly highlights suspicious activity with plain-English explanations.',
+  keywords: ['anomaly detection', 'fraud detection', 'AI fraud analytics', 'transaction analysis'],
   authors: [{ name: 'OutlierX Team' }],
 };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { SignedIn, SignedOut, SignInButton } from '@clerk/nextjs';
+import { SignedIn, SignedOut } from '@clerk/nextjs';
 import { ShieldCheck } from 'lucide-react';
 import { RulesPageContent } from '../../components/rules/rule-console';
 
@@ -16,7 +16,7 @@ function SignedOutState() {
             <ShieldCheck className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="font-display text-2xl font-semibold leading-none">OutlierX</h1>
+            <h1 className="font-display text-2xl font-semibold leading-none">Anomalyze</h1>
             <p className="mt-1 font-mono text-xs uppercase text-muted-foreground">Rule engine</p>
           </div>
         </div>

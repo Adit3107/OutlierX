@@ -115,7 +115,7 @@ export class DashboardService {
       totalTransactions,
       totalUploads,
       totalOrganizations,
-      alertCounts,
+      alertCounts: alertCounts as any,
       averageRiskScore: decisionAverages._avg.finalScore,
       averageMlConfidence: mlAverages._avg.confidence,
       averageProcessingTime: mlAverages._avg.processingTime,

@@ -93,7 +93,7 @@ export class AuthService {
     const role = membership.role;
 
     return {
-      user: hydratedUser,
+      user: hydratedUser as never,
       organization,
       membership,
       role,

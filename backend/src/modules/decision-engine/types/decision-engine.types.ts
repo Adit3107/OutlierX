@@ -1,5 +1,4 @@
-import type { DecisionRecommendation, RiskLevel } from '@prisma/client';
-import type { RuleResult } from '@anomaly/shared';
+import type { DecisionRecommendation, RiskLevel, RuleResult } from '@anomaly/shared';
 
 export interface DecisionSignalConfig {
   key: string;

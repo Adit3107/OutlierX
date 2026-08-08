@@ -40,7 +40,7 @@ export class OrganizationRepository {
       this.db.apiKey.count({ where: { organizationId } }),
       this.db.upload.aggregate({ where: { organizationId }, _sum: { fileSize: true } }),
       this.db.transaction.count({ where: { organizationId } }),
-      this.db.alert.count({ where: { organizationId, deletedAt: null } }),
+      this.db.alert.count({ where: { organizationId } }),
     ]);
   }
 }

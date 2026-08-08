@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import health, prediction
-from app.config import settings
+from app.routers import feature_engineering, health, models, prediction, registry_router, monitoring_router
 
 app = FastAPI(
     title="Financial Anomaly Detection ML Service",
@@ -21,6 +20,10 @@ app.add_middleware(
 # Register routers
 app.include_router(health.router)
 app.include_router(prediction.router)
+app.include_router(feature_engineering.router)
+app.include_router(models.router)
+app.include_router(registry_router.router)
+app.include_router(monitoring_router.router)
 
 @app.get("/")
 async def root():

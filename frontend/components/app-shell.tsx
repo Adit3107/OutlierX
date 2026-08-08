@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import {
   Activity,
+  Cpu,
   FlaskConical,
   LayoutDashboard,
   LogOut,
@@ -28,6 +29,8 @@ const NAV_ITEMS = [
   { label: 'Data Sources', icon: UploadCloud, href: '/data-sources' },
   { label: 'Transactions', icon: WalletCards, href: '/transactions' },
   { label: 'Rules', icon: Zap, href: '/rules' },
+  { label: 'Model Registry', icon: Cpu, href: '/models' },
+  { label: 'ML Monitoring', icon: Activity, href: '/monitoring' },
   { label: 'Playground', icon: FlaskConical, href: '/rules/playground' },
 ];
 

@@ -137,7 +137,16 @@ enum ActivityEntity {
   TRANSACTION
   RULE
   ALERT
+  MODEL
   SYSTEM
+}
+
+enum ModelStatus {
+  ACTIVE
+  INACTIVE
+  EXPERIMENTAL
+  CANARY
+  ARCHIVED
 }
 
 model User {
@@ -165,6 +174,7 @@ model User {
   activityLogs        ActivityLog[]
   createdRules        Rule[]
   decisions           Decision[]
+  alertComments       AlertComment[]
 
   @@index([email])
   @@index([clerkUserId])
@@ -197,6 +207,12 @@ model Organization {
   mlPredictions  MlPrediction[]
   activityLogs   ActivityLog[]
   decisions      Decision[]
+  featureVectors FeatureVector[]
+  monitoringSnapshots   MLMonitoringSnapshot[]
+  featureDriftMetrics   FeatureDriftMetric[]
+  predictionDriftMetrics PredictionDriftMetric[]
+  dataQualityMetrics    DataQualityMetric[]
+  modelHealthLogs       ModelHealthLog[]
 
   @@index([subscriptionPlan])
   @@index([subscriptionStatus])
@@ -305,6 +321,7 @@ model Transaction {
   upload       Upload       @relation(fields: [uploadId], references: [id], onDelete: Cascade)
   ruleExecutions RuleExecution[]
   mlPrediction   MlPrediction?
+  featureVector  FeatureVector?
 
   @@index([organizationId])
   @@index([transactionId])
@@ -321,14 +338,44 @@ model Transaction {
   @@index([organizationId, status])
 }
 
+model FeatureVector {
+  id               String   @id @default(uuid())
+  organizationId   String
+  transactionId    String   @unique
+  pipelineVersion  String   @default("v1.0.0")
+  featureVersion   String   @default("features-v2.1")
+  featureCount     Int
+  vector           Json
+  status           String   @default("GENERATED")
+  processingTimeMs Int
+  metadata         Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  transaction  Transaction  @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([transactionId])
+  @@index([pipelineVersion])
+  @@index([featureVersion])
+  @@index([status])
+  @@index([createdAt])
+  @@index([organizationId, createdAt])
+}
+
 model MlPrediction {
   id              String   @id @default(uuid())
   organizationId  String
   transactionId   String   @unique
+  modelName       String   @default("isolation_forest")
+  algorithm       String   @default("IsolationForest")
+  rawScore        Float?
   mlScore         Float
   mlPrediction    String
   confidence      Float
   modelVersion    String
+  warnings        Json?
   processedAt     DateTime
   processingTime  Int
   createdAt       DateTime @default(now())
@@ -340,10 +387,156 @@ model MlPrediction {
 
   @@index([organizationId])
   @@index([transactionId])
+  @@index([modelName])
   @@index([mlPrediction])
   @@index([modelVersion])
   @@index([processedAt])
   @@index([organizationId, processedAt])
+}
+
+model ModelRegistry {
+  id                String    @id @default(uuid())
+  modelName         String    @unique
+  algorithm         String
+  version           String
+  status            String    @default("ACTIVE")
+  supportedFeatures Json?
+  hyperparameters   Json?
+  accuracy          Float?
+  totalInferences   Int       @default(0)
+  avgLatencyMs      Float     @default(0.0)
+  lastUsedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([modelName])
+  @@index([algorithm])
+  @@index([status])
+}
+
+model MLModel {
+  id            String          @id @default(uuid())
+  name          String          @unique
+  algorithm     String
+  description   String?
+  status        ModelStatus     @default(ACTIVE)
+  activeVersion String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  versions          MLModelVersion[]
+  deploymentHistory ModelDeploymentHistory[]
+
+  @@index([name])
+  @@index([algorithm])
+  @@index([status])
+}
+
+model MLModelVersion {
+  id                   String      @id @default(uuid())
+  modelId              String
+  version              String
+  status               ModelStatus @default(INACTIVE)
+  description          String?
+  checksum             String
+  supportedFeatures    Json
+  expectedFeatureCount Int
+  hyperparameters      Json?
+  trainingConfig       Json?
+  artifactPath         String
+  pipelineVersion      String      @default("v1.0.0")
+  featureVersion       String      @default("features-v2.1")
+  scikitVersion        String?     @default("1.5.0")
+  pythonVersion        String?     @default("3.11")
+  frameworkVersion     String?     @default("FastAPI 0.111")
+  author               String?     @default("OutlierX ML Team")
+  trainingDataset      String?     @default("sample_transactions.csv")
+  activeFlag           Boolean     @default(false)
+  productionFlag       Boolean     @default(false)
+  experimentalFlag     Boolean     @default(false)
+  archivedFlag         Boolean     @default(false)
+  createdDate          DateTime    @default(now())
+  deploymentDate       DateTime?
+  previousVersion      String?
+  nextVersion          String?
+  reasonForUpdate      String?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  model             MLModel                  @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  evaluations       ModelEvaluation[]
+  deploymentHistory ModelDeploymentHistory[]
+
+  @@unique([modelId, version])
+  @@index([modelId])
+  @@index([version])
+  @@index([status])
+  @@index([activeFlag])
+  @@index([productionFlag])
+}
+
+model ModelEvaluation {
+  id                     String    @id @default(uuid())
+  versionId              String
+  datasetUsed            String
+  accuracy               Float?
+  precision              Float
+  recall                 Float
+  f1Score                Float
+  rocAuc                 Float
+  prAuc                  Float
+  confusionMatrix        Json
+  falsePositiveRate      Float
+  falseNegativeRate      Float
+  avgConfidence          Float
+  predictionDistribution Json?
+  inferenceTimeMs        Float
+  latencyMs              Float
+  memoryMb               Float
+  evaluationDate         DateTime  @default(now())
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  version MLModelVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([versionId])
+  @@index([evaluationDate])
+}
+
+model ModelComparison {
+  id                String   @id @default(uuid())
+  versionAId        String
+  versionBId        String
+  metricsComparison Json
+  winnerVersionId   String?
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([versionAId])
+  @@index([versionBId])
+  @@index([createdAt])
+}
+
+model ModelDeploymentHistory {
+  id            String   @id @default(uuid())
+  modelId       String
+  versionId     String
+  action        String
+  performedBy   String?  @default("system")
+  reason        String?
+  previousState Json?
+  newState      Json?
+  timestamp     DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  model   MLModel        @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  version MLModelVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+
+  @@index([modelId])
+  @@index([versionId])
+  @@index([action])
+  @@index([timestamp])
 }
 
 model Rule {
@@ -461,23 +654,30 @@ model RuleResult {
 }
 
 model Decision {
-  id                 String        @id @default(uuid())
-  organizationId     String
-  transactionId      String        @unique
-  mlPredictionId     String?       @unique
-  userId             String?
-  ruleScore          Int
-  mlScore            Int
-  finalScore         Int
-  confidence         Float
-  riskLevel          RiskLevel
-  decisionStrategy   String
-  decisionVersion    String
-  explanation        Json
-  recommendation     String
-  processedAt        DateTime
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  id                   String        @id @default(uuid())
+  organizationId       String
+  transactionId        String        @unique
+  mlPredictionId       String?       @unique
+  userId               String?
+  rawScore             Float?
+  ruleScore            Int
+  mlScore              Int
+  finalScore           Int
+  category             String?
+  decisionOutcome      String?
+  confidence           Float
+  riskLevel            RiskLevel
+  decisionStrategy     String
+  decisionVersion      String
+  explanation          Json
+  recommendation       String
+  timeline             Json?
+  ensembleBreakdown    Json?
+  historicalAdjustment Float?
+  metadata             Json?
+  processedAt          DateTime
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -514,6 +714,8 @@ model Alert {
   assignedAnalyst User?        @relation("AlertAssignedAnalyst", fields: [assignedAnalystId], references: [id], onDelete: SetNull)
   decision        Decision?    @relation(fields: [decisionId], references: [id], onDelete: SetNull)
 
+  comments          AlertComment[]
+
   @@index([organizationId])
   @@index([userId])
   @@index([assignedAnalystId])
@@ -527,6 +729,22 @@ model Alert {
   @@index([organizationId, status])
 }
 
+model AlertComment {
+  id        String   @id @default(uuid())
+  alertId   String
+  userId    String?
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  alert Alert @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([alertId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
 model ActivityLog {
   id             String         @id @default(uuid())
   organizationId String
@@ -534,6 +752,7 @@ model ActivityLog {
   action         String
   entity         ActivityEntity
   entityId       String?
+  ipAddress      String?
   metadata       Json?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
@@ -549,3 +768,163 @@ model ActivityLog {
   @@index([createdAt])
   @@index([organizationId, createdAt])
 }
+
+enum DriftSeverity {
+  NO_DRIFT
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ModelHealthStatus {
+  HEALTHY
+  WARNING
+  DEGRADED
+  CRITICAL
+}
+
+model MLMonitoringSnapshot {
+  id                    String            @id @default(uuid())
+  organizationId        String
+  modelId               String
+  modelVersion          String
+  timeWindow            String            @default("24h")
+  healthScore           Float             @default(100.0)
+  healthStatus          ModelHealthStatus @default(HEALTHY)
+  featureDriftScore     Float             @default(0.0)
+  predictionDriftScore  Float             @default(0.0)
+  dataQualityScore      Float             @default(100.0)
+  avgLatencyMs          Float             @default(8.5)
+  errorRate             Float             @default(0.0)
+  predictionVolume      Int               @default(0)
+  anomalyRate           Float             @default(0.0)
+  avgConfidence         Float             @default(0.95)
+  modelAgreementScore   Float             @default(1.0)
+  metricsSummary        Json?
+  timestamp             DateTime          @default(now())
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  featureDriftMetrics  FeatureDriftMetric[]
+  predictionMetrics    PredictionDriftMetric[]
+  dataQualityMetrics   DataQualityMetric[]
+
+  @@index([organizationId])
+  @@index([modelId])
+  @@index([modelVersion])
+  @@index([healthStatus])
+  @@index([timestamp])
+  @@index([organizationId, timestamp])
+  @@index([organizationId, modelId, timestamp])
+}
+
+model FeatureDriftMetric {
+  id                String        @id @default(uuid())
+  snapshotId        String?
+  organizationId    String
+  modelId           String
+  modelVersion      String
+  featureName       String
+  meanRef           Float?
+  meanCurr          Float?
+  stdRef            Float?
+  stdCurr           Float?
+  nullRateRef       Float?        @default(0.0)
+  nullRateCurr      Float?        @default(0.0)
+  psiScore          Float         @default(0.0)
+  ksPValue          Float?        @default(1.0)
+  jsDivergence      Float?        @default(0.0)
+  severity          DriftSeverity @default(NO_DRIFT)
+  distributionRef   Json?
+  distributionCurr  Json?
+  timestamp         DateTime      @default(now())
+  createdAt         DateTime      @default(now())
+
+  snapshot     MLMonitoringSnapshot? @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([snapshotId])
+  @@index([organizationId])
+  @@index([modelId])
+  @@index([featureName])
+  @@index([severity])
+  @@index([timestamp])
+  @@index([organizationId, timestamp])
+}
+
+model PredictionDriftMetric {
+  id                String        @id @default(uuid())
+  snapshotId        String?
+  organizationId    String
+  modelId           String
+  modelVersion      String
+  anomalyRateRef    Float         @default(0.05)
+  anomalyRateCurr   Float         @default(0.05)
+  avgScoreRef       Float         @default(0.20)
+  avgScoreCurr      Float         @default(0.20)
+  confidenceRef     Float         @default(0.95)
+  confidenceCurr    Float         @default(0.95)
+  psiScore          Float         @default(0.0)
+  severity          DriftSeverity @default(NO_DRIFT)
+  scoreDistribution Json?
+  timestamp         DateTime      @default(now())
+  createdAt         DateTime      @default(now())
+
+  snapshot     MLMonitoringSnapshot? @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([snapshotId])
+  @@index([organizationId])
+  @@index([modelId])
+  @@index([severity])
+  @@index([timestamp])
+  @@index([organizationId, timestamp])
+}
+
+model DataQualityMetric {
+  id                        String   @id @default(uuid())
+  snapshotId                String?
+  organizationId            String
+  validCount                Int      @default(0)
+  invalidCount              Int      @default(0)
+  missingValueRate          Float    @default(0.0)
+  duplicateRate             Float    @default(0.0)
+  schemaErrorCount          Int      @default(0)
+  unexpectedCategoriesCount Int      @default(0)
+  qualityScore              Float    @default(100.0)
+  issues                    Json?
+  timestamp                 DateTime @default(now())
+  createdAt                 DateTime @default(now())
+
+  snapshot     MLMonitoringSnapshot? @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  organization Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([snapshotId])
+  @@index([organizationId])
+  @@index([timestamp])
+  @@index([organizationId, timestamp])
+}
+
+model ModelHealthLog {
+  id             String            @id @default(uuid())
+  organizationId String
+  modelId        String
+  modelVersion   String
+  healthScore    Float
+  healthStatus   ModelHealthStatus
+  factors        Json?
+  reason         String?
+  timestamp      DateTime          @default(now())
+  createdAt      DateTime          @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([modelId])
+  @@index([healthStatus])
+  @@index([timestamp])
+  @@index([organizationId, timestamp])
+}
+

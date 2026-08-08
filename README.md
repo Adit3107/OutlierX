@@ -438,3 +438,28 @@ The project uses the existing root `.env` values:
 - `STORAGE_LOCAL_ROOT` optional, defaults to `uploads`
 
 Do not commit real credentials.
+
+## Phase 2.5 - ML Monitoring, Drift Detection & Analytics
+
+OutlierX includes a production-grade **ML Monitoring, Drift Detection, and Analytics System** designed to continuously verify the reliability and health of deployed anomaly detection models.
+
+### Key Capabilities
+
+- **Population Stability Index (PSI)**: Measures distribution shifts between baseline reference data and incoming production transaction vectors (`PSI < 0.10` No Drift, `0.10–0.20` Low, `0.20–0.30` Medium, `> 0.30` High/Critical).
+- **Kolmogorov-Smirnov (KS) Test**: 2-sample non-parametric distribution test returning $D$-statistic and $p$-values.
+- **Jensen-Shannon Divergence**: Symmetric distribution divergence measurement.
+- **Deterministic Model Health Score**: Evaluates model health on a 0–100 scale combining Feature Drift (25%), Prediction Drift (25%), Data Quality (20%), Latency/Performance (15%), and Confidence/Agreement (15%) into `HEALTHY`, `WARNING`, `DEGRADED`, and `CRITICAL` statuses.
+- **Data Quality Monitoring**: Audits missing value rates, schema validation errors, duplicate rates, and unexpected category warnings.
+- **Latency & Performance Analytics**: Tracks inference throughput, error rates, and P50, P95, and P99 latency percentiles over time.
+- **Asynchronous & Non-Blocking**: Monitoring runs asynchronously and completely isolated from live transaction scoring.
+- **Alert Integration**: Breaches trigger automatic alerts in the existing OutlierX Alert system.
+
+### Monitoring API Endpoints
+
+- `GET /api/v1/monitoring/overview` — Executive ML health, healthy model count, drift status, volume, and latency.
+- `POST /api/v1/monitoring/run` — Trigger automated monitoring audit job.
+- `GET /api/v1/monitoring/features` — Feature drift statistics (PSI, KS p-value, JS divergence, Severity).
+- `GET /api/v1/monitoring/predictions` — Anomaly rate, confidence over time, risk distribution, and model agreement %.
+- `GET /api/v1/monitoring/performance` — Latency percentiles (P50, P95, P99), throughput, error rate.
+- `GET /api/v1/monitoring/history` — Historical snapshot timeline.
+

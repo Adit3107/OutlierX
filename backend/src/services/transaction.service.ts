@@ -15,6 +15,7 @@ import { BadRequestError, ConflictError, NotFoundError } from '../utils/errors.j
 import { RuleService } from '../modules/rules/services/rule.service.js';
 import { PredictionService, toPredictionDto } from './prediction.service.js';
 import { DecisionService } from '../modules/decision-engine/services/decision.service.js';
+import { FeatureEngineeringService } from './feature-engineering.service.js';
 
 function toUpload(upload: Awaited<ReturnType<UploadRepository['create']>>): Upload {
   return {
@@ -169,7 +170,8 @@ export class UploadService {
     private transactionRepository: TransactionRepository,
     private ruleService?: RuleService,
     private predictionService?: PredictionService,
-    private decisionService?: DecisionService
+    private decisionService?: DecisionService,
+    private featureService?: FeatureEngineeringService
   ) {}
 
   async uploadCsv(input: {
@@ -181,52 +183,35 @@ export class UploadService {
       throw new BadRequestError('CSV file is required');
     }
 
+    const fileHash = await hashFile(input.file.path);
+    const existing = await this.uploadRepository.findByHash(input.organizationId, fileHash);
+    if (existing) {
+      fs.unlink(input.file.path, () => {});
+      throw new ConflictError(`This exact file has already been uploaded as "${existing.originalFilename}".`);
+    }
+
+    const key = sanitizeStoredFilename(input.file.originalname, fileHash);
+    const storageResult = await this.storageProvider.upload({
+      organizationId: input.organizationId,
+      filename: key,
+      sourcePath: input.file.path,
+    });
+
     const startedAt = Date.now();
     let uploadRecord: Awaited<ReturnType<UploadRepository['create']>> | null = null;
 
     try {
-      const fileHash = await hashFile(input.file.path);
-      const duplicate = await this.uploadRepository.findByHash(input.organizationId, fileHash);
-      if (duplicate) {
-        throw new ConflictError('An identical upload already exists for this organization', {
-          uploadId: duplicate.id,
-        });
-      }
-
-      const storedFilename = sanitizeStoredFilename(input.file.originalname, fileHash);
-      const storedFile = await this.storageProvider.upload({
-        organizationId: input.organizationId,
-        filename: storedFilename,
-        sourcePath: input.file.path,
-      });
-
       uploadRecord = await this.uploadRepository.create({
         organizationId: input.organizationId,
         uploadedById: input.userId,
-        filename: storedFilename,
+        filename: key,
         originalFilename: input.file.originalname,
-        storageKey: storedFile.key,
-        storageUrl: storedFile.url,
-        mimeType: input.file.mimetype,
+        storageKey: storageResult.key,
+        storageUrl: storageResult.url,
+        mimeType: input.file.mimetype || 'text/csv',
         fileSize: input.file.size,
         fileHash,
-        status: 'UPLOADED',
-      });
-
-      await this.activityService.log({
-        organizationId: input.organizationId,
-        userId: input.userId,
-        action: 'upload.started',
-        entity: 'UPLOAD',
-        entityId: uploadRecord.id,
-        metadata: {
-          originalFilename: input.file.originalname,
-          fileSize: input.file.size,
-        },
-      });
-
-      uploadRecord = await this.uploadRepository.update(uploadRecord.id, input.organizationId, {
-        status: 'PARSING',
+        status: UploadStatus.PROCESSING,
       });
 
       const summary = await this.parserService.parseFile({
@@ -235,14 +220,19 @@ export class UploadService {
         uploadId: uploadRecord.id,
       });
 
-      uploadRecord = await this.uploadRepository.update(uploadRecord.id, input.organizationId, {
-        status: 'COMPLETED',
-        totalRows: summary.totalRows,
-        processedRows: summary.processedRows,
-        failedRows: summary.failedRows,
-        processingTime: Date.now() - startedAt,
-        errorSummary: summary.errors as unknown as Prisma.InputJsonValue,
-      });
+      if (this.featureService && summary.processedRows > 0) {
+        try {
+          const txs = await this.transactionRepository.listAllByUpload(
+            input.organizationId,
+            uploadRecord.id
+          );
+          if (txs.length > 0) {
+            await this.featureService.processBatchFeatureVectors(input.organizationId, txs);
+          }
+        } catch (featErr) {
+          // Feature extraction non-blocking error
+        }
+      }
 
       await this.activityService.log({
         organizationId: input.organizationId,
@@ -464,13 +454,31 @@ export class UploadService {
 
     return toUpload(deleted);
   }
+
+  async getFailedRowsCsv(organizationId: string, uploadId: string): Promise<string> {
+    const upload = await this.uploadRepository.findById(uploadId, organizationId);
+    if (!upload) {
+      throw new NotFoundError('Upload not found');
+    }
+
+    const errors = (upload.errorSummary as unknown as UploadRowError[]) || [];
+    let csvContent = 'row_number,transaction_id,errors\n';
+    for (const err of errors) {
+      const rowNum = err.row;
+      const txId = err.transactionId ? `"${err.transactionId.replace(/"/g, '""')}"` : '';
+      const errMsgs = `"${(err.errors || []).join('; ').replace(/"/g, '""')}"`;
+      csvContent += `${rowNum},${txId},${errMsgs}\n`;
+    }
+    return csvContent;
+  }
 }
 
 export class TransactionService {
   constructor(
     private transactionRepository: TransactionRepository,
     private uploadRepository: UploadRepository,
-    private activityService: ActivityService
+    private activityService: ActivityService,
+    private predictionService?: PredictionService
   ) {}
 
   async listTransactions(
@@ -489,9 +497,21 @@ export class TransactionService {
   }
 
   async getTransaction(organizationId: string, userId: string, id: string): Promise<Transaction> {
-    const transaction = await this.transactionRepository.findById(organizationId, id);
+    let transaction = await this.transactionRepository.findById(organizationId, id);
     if (!transaction) {
       throw new NotFoundError('Transaction not found');
+    }
+
+    if (!transaction.mlPrediction && this.predictionService) {
+      try {
+        await this.predictionService.predictStoredTransaction(organizationId, id);
+        const updated = await this.transactionRepository.findById(organizationId, id);
+        if (updated) {
+          transaction = updated;
+        }
+      } catch (err) {
+        // Fallback prediction
+      }
     }
 
     await this.activityService.log({

@@ -62,7 +62,7 @@ export class DashboardRepository {
   alertCounts(organizationId: string) {
     return this.db.alert.groupBy({
       by: ['severity'],
-      where: { organizationId, deletedAt: null },
+      where: { organizationId },
       _count: { _all: true },
     });
   }

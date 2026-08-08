@@ -17,6 +17,7 @@ import {
 } from '../controllers/foundation.controller.js';
 import { TransactionController, UploadController } from '../controllers/transaction.controller.js';
 import { PredictionController } from '../controllers/prediction.controller.js';
+import { FeatureEngineeringController } from '../controllers/feature-engineering.controller.js';
 import { RuleController } from '../modules/rules/controllers/rule.controller.js';
 import { DecisionController } from '../modules/decision-engine/controllers/decision.controller.js';
 import { AlertController } from '../modules/alerts/controllers/alert.controller.js';
@@ -97,6 +98,7 @@ import {
 import { TransactionService, UploadService } from '../services/transaction.service.js';
 import { MLClientService } from '../services/ml-client.service.js';
 import { PredictionService } from '../services/prediction.service.js';
+import { FeatureEngineeringService } from '../services/feature-engineering.service.js';
 import { PredictionRepository } from '../repositories/prediction.repository.js';
 import { createStorageProvider } from '../services/storage.service.js';
 import { RuleRepository } from '../modules/rules/repositories/rule.repository.js';
@@ -110,6 +112,23 @@ import { AlertService } from '../modules/alerts/services/alert.service.js';
 import { DashboardRepository } from '../modules/dashboard/repositories/dashboard.repository.js';
 import { DashboardService } from '../modules/dashboard/services/dashboard.service.js';
 import { AnalyticsService } from '../modules/dashboard/services/analytics.service.js';
+
+import { ModelRegistryRepository } from '../modules/model-registry/repositories/model-registry.repository.js';
+import { ModelRegistryService } from '../modules/model-registry/services/model-registry.service.js';
+import { ModelRegistryController } from '../modules/model-registry/controllers/model-registry.controller.js';
+import {
+  modelActivateValidator,
+  modelArchiveValidator,
+  modelCompareValidator,
+  modelRollbackValidator,
+} from '../modules/model-registry/validators/model-registry.validator.js';
+
+import { MonitoringRepository } from '../modules/monitoring/repositories/monitoring.repository.js';
+import { MonitoringService } from '../modules/monitoring/services/monitoring.service.js';
+import { MonitoringController } from '../modules/monitoring/controllers/monitoring.controller.js';
+import { runMonitoringValidator } from '../modules/monitoring/validators/monitoring.validator.js';
+
+import { prisma } from '../lib/prisma.js';
 
 const apiRouter = Router();
 
@@ -169,7 +188,21 @@ const csvParserService = new CsvParserService(
   new CsvValidationService(),
   transactionPersistenceService
 );
+const featureEngineeringService = new FeatureEngineeringService();
+const featureEngineeringController = new FeatureEngineeringController(featureEngineeringService);
+const modelRegistryService = new ModelRegistryService(
+  new ModelRegistryRepository(prisma),
+  activityService
+);
+const modelRegistryController = new ModelRegistryController(modelRegistryService);
+const monitoringService = new MonitoringService(
+  new MonitoringRepository(prisma),
+  alertRepository,
+  activityService
+);
+const monitoringController = new MonitoringController(monitoringService);
 const storageProvider = createStorageProvider();
+
 const uploadController = new UploadController(
   new UploadService(
     uploadRepository,
@@ -179,11 +212,12 @@ const uploadController = new UploadController(
     transactionRepository,
     ruleService,
     predictionService,
-    decisionService
+    decisionService,
+    featureEngineeringService
   )
 );
 const transactionController = new TransactionController(
-  new TransactionService(transactionRepository, uploadRepository, activityService)
+  new TransactionService(transactionRepository, uploadRepository, activityService, predictionService)
 );
 const predictionController = new PredictionController(predictionService);
 const ruleController = new RuleController(ruleService);
@@ -202,6 +236,13 @@ apiRouter.get('/openapi.json', openApiController.get);
 apiRouter.post('/webhooks/clerk', webhookController.handleClerk);
 
 apiRouter.use(requireAuth);
+
+apiRouter.get('/features/metrics', featureEngineeringController.getMetrics);
+apiRouter.get('/features/transaction/:transactionId', featureEngineeringController.getByTransaction);
+
+apiRouter.get('/models/list', modelRegistryController.listModels);
+apiRouter.get('/models/health', modelRegistryController.getStatus);
+apiRouter.get('/models/stats', modelRegistryController.getStatus);
 
 apiRouter.get('/auth/me', authController.me);
 
@@ -519,6 +560,12 @@ apiRouter.get(
   validateParams(idParamsValidator),
   uploadController.getById
 );
+apiRouter.get(
+  '/uploads/:id/failed-rows/download',
+  requirePermission(PERMISSIONS.UPLOADS_READ),
+  validateParams(idParamsValidator),
+  uploadController.downloadFailedRows
+);
 apiRouter.delete(
   '/uploads/:id',
   requirePermission(PERMISSIONS.UPLOADS_DELETE),
@@ -580,6 +627,100 @@ apiRouter.get(
   validateParams(idParamsValidator),
   validateQuery(transactionQueryValidator),
   transactionController.listByUpload
+);
+
+// Model Registry & Versioning API Routes
+apiRouter.get(
+  '/models/status',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  modelRegistryController.getStatus
+);
+apiRouter.get(
+  '/models',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  modelRegistryController.listModels
+);
+apiRouter.get(
+  '/models/history',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  modelRegistryController.getDeploymentHistory
+);
+apiRouter.post(
+  '/models/compare',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  validateBody(modelCompareValidator),
+  modelRegistryController.compareVersions
+);
+apiRouter.get(
+  '/models/:name',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  modelRegistryController.getModelByName
+);
+apiRouter.get(
+  '/models/versions/:versionId',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  modelRegistryController.getVersionById
+);
+apiRouter.post(
+  '/models/versions/:versionId/activate',
+  requirePermission(PERMISSIONS.SETTINGS_UPDATE),
+  validateBody(modelActivateValidator),
+  modelRegistryController.activateVersion
+);
+apiRouter.post(
+  '/models/rollback',
+  requirePermission(PERMISSIONS.SETTINGS_UPDATE),
+  validateBody(modelRollbackValidator),
+  modelRegistryController.rollbackVersion
+);
+apiRouter.post(
+  '/models/versions/:versionId/archive',
+  requirePermission(PERMISSIONS.SETTINGS_UPDATE),
+  validateBody(modelArchiveValidator),
+  modelRegistryController.archiveVersion
+);
+
+// ML Monitoring, Drift Detection & Analytics Routes
+apiRouter.get(
+  '/monitoring/overview',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  monitoringController.getOverview
+);
+apiRouter.post(
+  '/monitoring/run',
+  requirePermission(PERMISSIONS.SETTINGS_UPDATE),
+  validateBody(runMonitoringValidator),
+  monitoringController.runMonitoring
+);
+apiRouter.get(
+  '/monitoring/features',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  monitoringController.getFeatureDrift
+);
+apiRouter.get(
+  '/monitoring/drift',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  monitoringController.getFeatureDrift
+);
+apiRouter.get(
+  '/monitoring/predictions',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  monitoringController.getPredictions
+);
+apiRouter.get(
+  '/monitoring/performance',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  monitoringController.getPerformance
+);
+apiRouter.get(
+  '/monitoring/history',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  monitoringController.getHistory
+);
+apiRouter.get(
+  '/monitoring/health-logs',
+  requirePermission(PERMISSIONS.ANALYTICS_READ),
+  monitoringController.getHealthLogs
 );
 
 export default apiRouter;

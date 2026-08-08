@@ -4,7 +4,7 @@ import { prisma } from '../lib/prisma.js';
 import { config } from '../config/index.js';
 import { AuthService } from '../services/auth.service.js';
 import { AuthRepository } from '../repositories/auth.repository.js';
-import { sendSuccess, sendError } from '../utils/response.js';
+import { sendSuccess } from '../utils/response.js';
 import { logger } from '../lib/logger.js';
 
 const authService = new AuthService(new AuthRepository());
@@ -136,9 +136,9 @@ export class WebhookController {
           const clerkUserId = eventData.id;
           await prisma.user.updateMany({
             where: { clerkUserId },
-            data: { status: 'DEACTIVATED' },
+            data: { status: 'SUSPENDED' },
           });
-          logger.info(`Clerk webhook user.deleted: Set status to DEACTIVATED for user ${clerkUserId}`);
+          logger.info(`Clerk webhook user.deleted: Set status to SUSPENDED for user ${clerkUserId}`);
           break;
         }
 

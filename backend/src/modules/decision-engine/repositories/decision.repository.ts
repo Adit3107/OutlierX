@@ -6,7 +6,7 @@ export interface DecisionFilters {
   limit: number;
   transactionId?: string;
   riskLevel?: Prisma.EnumRiskLevelFilter['equals'];
-  recommendation?: Prisma.EnumDecisionRecommendationFilter['equals'];
+  recommendation?: string;
   decisionStrategy?: string;
   startDate?: string;
   endDate?: string;
@@ -17,15 +17,22 @@ export interface DecisionCreateInput {
   transactionId: string;
   ruleExecutionId?: string | null;
   mlPredictionId?: string | null;
+  rawScore?: number | null;
   ruleScore: number;
   mlScore: number;
   finalScore: number;
+  category?: string | null;
+  decisionOutcome?: string | null;
   confidence: number;
   riskLevel: Prisma.DecisionUncheckedCreateInput['riskLevel'];
   decisionStrategy: string;
   decisionVersion: string;
   explanation: Prisma.InputJsonValue;
   recommendation: Prisma.DecisionUncheckedCreateInput['recommendation'];
+  timeline?: Prisma.InputJsonValue;
+  ensembleBreakdown?: Prisma.InputJsonValue;
+  historicalAdjustment?: number | null;
+  metadata?: Prisma.InputJsonValue;
   processedAt: Date;
 }
 
@@ -78,7 +85,6 @@ export class DecisionRepository {
   findTransaction(organizationId: string, transactionId: string) {
     return this.db.transaction.findFirst({
       where: { id: transactionId, organizationId },
-      select: { id: true },
     });
   }
 

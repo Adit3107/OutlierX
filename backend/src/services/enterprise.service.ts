@@ -135,7 +135,7 @@ export class SettingsService {
 
     return {
       organization,
-      user,
+      user: user as never,
       usage,
       notifications: normalizeNotifications(user.notificationPreferences),
     };
@@ -226,12 +226,12 @@ export class AdminService {
       this.db.user.count(),
       this.db.upload.count(),
       this.db.transaction.count(),
-      this.db.alert.count({ where: { deletedAt: null } }),
+      this.db.alert.count(),
       this.db.apiKey.count(),
       this.db.organization.findMany({ orderBy: { createdAt: 'desc' }, take: 8 }),
       this.db.user.findMany({ orderBy: { createdAt: 'desc' }, take: 8 }),
       this.db.upload.findMany({ orderBy: { createdAt: 'desc' }, take: 8 }),
-      this.db.alert.findMany({ where: { deletedAt: null }, orderBy: { createdAt: 'desc' }, take: 8 }),
+      this.db.alert.findMany({ orderBy: { createdAt: 'desc' }, take: 8 }),
       this.db.activityLog.findMany({
         include: { user: { select: { id: true, email: true, firstName: true, lastName: true, avatar: true } } },
         orderBy: { createdAt: 'desc' },

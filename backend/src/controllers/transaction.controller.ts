@@ -65,6 +65,18 @@ export class UploadController {
       next(error);
     }
   };
+
+  downloadFailedRows = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const auth = requireRequestAuth(req);
+      const csv = await this.uploadService.getFailedRowsCsv(auth.organization.id, req.params.id);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="failed_rows_${req.params.id}.csv"`);
+      res.status(200).send(csv);
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export class TransactionController {

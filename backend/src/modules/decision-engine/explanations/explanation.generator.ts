@@ -1,4 +1,4 @@
-import type { DecisionRecommendation, RiskLevel } from '@prisma/client';
+import type { DecisionRecommendation, RiskLevel } from '@anomaly/shared';
 import type {
   DecisionEngineConfig,
   MlDecisionInput,

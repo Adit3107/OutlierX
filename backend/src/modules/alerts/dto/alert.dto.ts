@@ -18,7 +18,7 @@ type AlertWithRelations = Prisma.AlertGetPayload<{
   };
 }>;
 
-export function toAlertDto(alert: AlertWithRelations): Alert {
+export function toAlertDto(alert: any): Alert {
   return {
     id: alert.id,
     organizationId: alert.organizationId,
@@ -35,9 +35,6 @@ export function toAlertDto(alert: AlertWithRelations): Alert {
     recommendation: alert.recommendation,
     status: alert.status,
     isRead: alert.isRead,
-    resolvedAt: alert.resolvedAt,
-    archivedAt: alert.archivedAt,
-    deletedAt: alert.deletedAt,
     createdAt: alert.createdAt,
     updatedAt: alert.updatedAt,
     assignedAnalyst: alert.assignedAnalyst,

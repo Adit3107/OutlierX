@@ -12,9 +12,9 @@ type DecisionForAlert = {
   finalScore: number;
   confidence: number;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  recommendation: Prisma.AlertUncheckedCreateInput['recommendation'];
-  explanation: Prisma.JsonValue;
-  processedAt: Date;
+  recommendation?: string;
+  explanation: unknown;
+  processedAt: Date | string;
 };
 
 export class AlertService {
@@ -43,7 +43,7 @@ export class AlertService {
       throw new NotFoundError('Alert not found');
     }
 
-    return toAlertDetailDto(alert, []);
+    return toAlertDetailDto(alert as any, []);
   }
 
   async createFromDecision(decision: DecisionForAlert, userId?: string | null): Promise<Alert> {
@@ -66,8 +66,7 @@ export class AlertService {
       riskScore: decision.finalScore,
       confidence: decision.confidence,
       triggeredRules: triggeredRules as Prisma.InputJsonValue,
-      recommendation: decision.recommendation,
-      createdAt: decision.processedAt,
+      createdAt: new Date(decision.processedAt),
     });
 
     await this.activityService.log({
@@ -145,16 +144,7 @@ export class AlertService {
     if (!status) {
       return {};
     }
-
-    if (status === 'RESOLVED') {
-      return { status, resolvedAt: new Date(), archivedAt: null };
-    }
-
-    if (status === 'ARCHIVED') {
-      return { status, archivedAt: new Date() };
-    }
-
-    return { status: 'OPEN', resolvedAt: null, archivedAt: null };
+    return { status };
   }
 
   private bulkMutation(action: string): Prisma.AlertUpdateManyMutationInput {
@@ -165,15 +155,15 @@ export class AlertService {
       return { isRead: false };
     }
     if (action === 'RESOLVE') {
-      return { status: 'RESOLVED', resolvedAt: new Date(), archivedAt: null };
+      return { status: 'RESOLVED' };
     }
     if (action === 'REOPEN') {
-      return { status: 'OPEN', resolvedAt: null, archivedAt: null };
+      return { status: 'OPEN' };
     }
     if (action === 'ARCHIVE') {
-      return { status: 'ARCHIVED', archivedAt: new Date() };
+      return { status: 'ARCHIVED' };
     }
-    return { deletedAt: new Date() };
+    return { status: 'ARCHIVED' };
   }
 
   private actionForUpdate(status?: AlertStatus) {

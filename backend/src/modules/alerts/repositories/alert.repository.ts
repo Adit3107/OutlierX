@@ -8,7 +8,7 @@ export interface AlertFilters {
   severity?: Prisma.EnumAlertSeverityFilter['equals'];
   status?: AlertStatus;
   isRead?: boolean;
-  recommendation?: Prisma.EnumDecisionRecommendationNullableFilter['equals'];
+  recommendation?: string;
   assigned?: 'assigned' | 'unassigned';
   startDate?: string;
   endDate?: string;
@@ -25,12 +25,10 @@ export interface AlertCreateInput {
   riskScore?: number | null;
   confidence?: number | null;
   triggeredRules?: Prisma.InputJsonValue;
-  recommendation?: Prisma.AlertUncheckedCreateInput['recommendation'];
   createdAt?: Date;
 }
 
 const alertInclude = {
-  transaction: true,
   decision: true,
   assignedAnalyst: {
     select: {
@@ -62,13 +60,13 @@ export class AlertRepository {
 
   findById(organizationId: string, id: string) {
     return this.db.alert.findFirst({
-      where: { id, organizationId, deletedAt: null },
+      where: { id, organizationId },
       include: alertInclude,
     });
   }
 
   findByDecision(decisionId: string) {
-    return this.db.alert.findUnique({
+    return this.db.alert.findFirst({
       where: { decisionId },
       include: alertInclude,
     });
@@ -91,7 +89,7 @@ export class AlertRepository {
 
   bulkUpdate(organizationId: string, ids: string[], data: Prisma.AlertUpdateManyMutationInput) {
     return this.db.alert.updateMany({
-      where: { organizationId, id: { in: ids }, deletedAt: null },
+      where: { organizationId, id: { in: ids } },
       data,
     });
   }
@@ -99,14 +97,14 @@ export class AlertRepository {
   countsBySeverity(organizationId: string) {
     return this.db.alert.groupBy({
       by: ['severity'],
-      where: { organizationId, deletedAt: null },
+      where: { organizationId },
       _count: { _all: true },
     });
   }
 
   recent(organizationId: string, limit = 8) {
     return this.db.alert.findMany({
-      where: { organizationId, deletedAt: null },
+      where: { organizationId },
       include: alertInclude,
       orderBy: { createdAt: 'desc' },
       take: limit,
@@ -116,11 +114,9 @@ export class AlertRepository {
   private buildWhere(organizationId: string, filters: AlertFilters) {
     return {
       organizationId,
-      deletedAt: null,
       ...(filters.severity ? { severity: filters.severity } : {}),
       ...(filters.status ? { status: filters.status } : {}),
       ...(filters.isRead !== undefined ? { isRead: filters.isRead } : {}),
-      ...(filters.recommendation ? { recommendation: filters.recommendation } : {}),
       ...(filters.assigned === 'assigned' ? { assignedAnalystId: { not: null } } : {}),
       ...(filters.assigned === 'unassigned' ? { assignedAnalystId: null } : {}),
       ...(filters.startDate || filters.endDate
@@ -136,9 +132,6 @@ export class AlertRepository {
             OR: [
               { title: { contains: filters.search, mode: 'insensitive' } },
               { description: { contains: filters.search, mode: 'insensitive' } },
-              { recommendation: { equals: filters.search as never } },
-              { transaction: { transactionId: { contains: filters.search, mode: 'insensitive' } } },
-              { transaction: { merchant: { contains: filters.search, mode: 'insensitive' } } },
               { assignedAnalyst: { email: { contains: filters.search, mode: 'insensitive' } } },
             ],
           }

@@ -1,4 +1,4 @@
-import type { DecisionRecommendation } from '@prisma/client';
+import type { DecisionRecommendation } from '@anomaly/shared';
 import type { DecisionEngineConfig } from '../types/decision-engine.types.js';
 import { roundScore } from '../utils/score.utils.js';
 

@@ -379,3 +379,50 @@ export const AlertBulkActionSchema = z.object({
   ids: z.array(z.string().uuid()).min(1).max(500),
   action: z.enum(['MARK_READ', 'MARK_UNREAD', 'RESOLVE', 'REOPEN', 'ARCHIVE', 'DELETE']),
 });
+
+const modelStatusValues = ['ACTIVE', 'INACTIVE', 'EXPERIMENTAL', 'CANARY', 'ARCHIVED'] as const;
+
+export const ModelCompareSchema = z.object({
+  versionAId: z.string().min(1),
+  versionBId: z.string().min(1),
+});
+
+export const ModelActivateSchema = z.object({
+  reason: z.string().trim().max(500).optional(),
+});
+
+export const ModelRollbackSchema = z.object({
+  targetVersionId: z.string().min(1).optional(),
+  targetVersion: z.string().trim().optional(),
+  reason: z.string().trim().max(500).optional(),
+});
+
+export const ModelArchiveSchema = z.object({
+  reason: z.string().trim().max(500).optional(),
+});
+
+export const ModelQuerySchema = PaginationQuerySchema.extend({
+  search: z.string().trim().max(120).optional(),
+  status: z.enum(modelStatusValues).optional(),
+});
+
+export const ModelVersionQuerySchema = PaginationQuerySchema.extend({
+  modelId: z.string().optional(),
+  status: z.enum(modelStatusValues).optional(),
+});
+
+export const MonitoringQuerySchema = PaginationQuerySchema.extend({
+  modelId: z.string().optional(),
+  modelVersion: z.string().optional(),
+  timeWindow: z.enum(['1h', '24h', '7d', '30d', 'all']).optional().default('24h'),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+
+export const RunMonitoringSchema = z.object({
+  modelId: z.string().optional().default('isolation_forest'),
+  modelVersion: z.string().optional().default('v1.2.0'),
+  timeWindow: z.enum(['1h', '24h', '7d', '30d']).optional().default('24h'),
+});
+
+

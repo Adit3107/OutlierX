@@ -1,9 +1,23 @@
-import { Navigate, Outlet } from 'react-router-dom';
+'use client';
+
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 
-export const AdminRoute = () => {
+export const AdminRoute = ({ children }) => {
     const { user, loading, isAuthenticated } = useAuth();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (!loading) {
+            if (!isAuthenticated) {
+                router.replace('/login');
+            } else if (user?.role !== 'ADMIN') {
+                router.replace('/dashboard');
+            }
+        }
+    }, [loading, isAuthenticated, user, router]);
 
     if (loading) {
         return (
@@ -13,22 +27,9 @@ export const AdminRoute = () => {
         );
     }
 
-    if (!isAuthenticated) return <Navigate to="/login" replace />;
-
-    // Check if user is admin
-    if (user?.role !== 'ADMIN') {
-        return (
-            <div className="h-screen w-full flex flex-col items-center justify-center bg-black text-white p-6 text-center">
-                <h1 className="text-4xl font-bold text-red-600 mb-4">403 Forbidden</h1>
-                <p className="text-zinc-400 max-w-md mb-8">
-                    You do not have permission to access the Neural Command Center.
-                    This incident will be reported.
-                </p>
-                <Navigate to="/dashboard" replace />
-                {/* Or a Back button */}
-            </div>
-        );
+    if (!isAuthenticated || user?.role !== 'ADMIN') {
+        return null;
     }
 
-    return <Outlet />;
+    return children;
 };

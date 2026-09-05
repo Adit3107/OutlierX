@@ -1,26 +1,23 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { mlClient } from '../../api-integration/client';
-import { Info, Upload, X, TrendingUp } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Info, Upload, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 
-/**
- * ProfileStatusBanner — Non-blocking informational banner
- * 
- * Shows only when user's behavioral profile is NEW or INCOMPLETE.
- * Purely informational — warns that anomaly detection may not be accurate.
- * Dismissible (persisted in localStorage).
- */
 export function ProfileStatusBanner({ userId }) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [dismissed, setDismissed] = useState(false);
 
   // Check localStorage for dismissal
   useEffect(() => {
-    const key = `profile_banner_dismissed_${userId}`;
-    if (localStorage.getItem(key) === 'true') {
-      setDismissed(true);
+    if (typeof window !== 'undefined') {
+      const key = `profile_banner_dismissed_${userId}`;
+      if (localStorage.getItem(key) === 'true') {
+        setDismissed(true);
+      }
     }
   }, [userId]);
 
@@ -32,13 +29,15 @@ export function ProfileStatusBanner({ userId }) {
       return res.data;
     },
     enabled: !!userId && !dismissed,
-    refetchInterval: 60000, // Check every minute
+    refetchInterval: 60000,
     retry: 1,
   });
 
   const handleDismiss = () => {
-    const key = `profile_banner_dismissed_${userId}`;
-    localStorage.setItem(key, 'true');
+    if (typeof window !== 'undefined') {
+      const key = `profile_banner_dismissed_${userId}`;
+      localStorage.setItem(key, 'true');
+    }
     setDismissed(true);
   };
 
@@ -61,7 +60,6 @@ export function ProfileStatusBanner({ userId }) {
         className="mb-6"
       >
         <div className="relative bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/10 border border-indigo-500/20 rounded-xl p-4">
-          {/* Dismiss button */}
           <button
             onClick={handleDismiss}
             className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
@@ -95,7 +93,6 @@ export function ProfileStatusBanner({ userId }) {
                     {monthsCovered.toFixed(1)} months of data covered.
                     Detection accuracy will improve as more data is added.
                   </p>
-                  {/* Progress bar */}
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-1.5 bg-muted/30 rounded-full overflow-hidden">
                       <motion.div
@@ -112,9 +109,8 @@ export function ProfileStatusBanner({ userId }) {
                 </>
               )}
 
-              {/* Upload link */}
               <button
-                onClick={() => navigate('/upload')}
+                onClick={() => router.push('/upload')}
                 className="inline-flex items-center gap-1.5 mt-2 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
               >
                 <Upload className="w-3 h-3" />

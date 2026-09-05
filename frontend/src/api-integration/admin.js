@@ -1,19 +1,13 @@
-// import { client } from './client'; // Removed unused and invalid import
-
-// We need to target the admin service.
-// In local dev, admin service is on port 3005.
-// However, 'client' uses a base URL (likely pointing to ingestion or gateway).
-// Since we don't have a gateway, we need a separate client or override the base URL.
-// For simplicity in this demo, we'll create a dedicated admin client or assumes usage of proxy if configured.
-// Given the setup, we'll make direct calls to port 3005 for local dev, 
-// OR simpler: we update vite proxy to route /api/admin to port 3005.
-
-// Let's assume we can use the same axios instance but override baseURL if needed, 
-// or simpler, just create a new one.
-
 import axios from 'axios';
 
-const ADMIN_URL = import.meta.env.VITE_ADMIN_SERVICE_URL || 'http://localhost:3005';
+const getEnv = (key, fallback) => {
+    if (typeof process !== 'undefined' && process.env && process.env[key]) {
+        return process.env[key];
+    }
+    return fallback;
+};
+
+const ADMIN_URL = getEnv('VITE_ADMIN_SERVICE_URL', getEnv('NEXT_PUBLIC_ADMIN_SERVICE_URL', 'http://localhost:3005'));
 
 const adminClient = axios.create({
     baseURL: ADMIN_URL,
@@ -24,9 +18,11 @@ const adminClient = axios.create({
 
 // Add auth interceptor
 adminClient.interceptors.request.use(async (config) => {
-    const token = localStorage.getItem('anomalyze_token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('anomalyze_token') || localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
     }
     return config;
 });

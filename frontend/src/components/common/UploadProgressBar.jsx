@@ -1,3 +1,5 @@
+'use client';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { File, CheckCircle, XCircle, X, Loader2 } from 'lucide-react';
 import { useUpload } from '../../contexts/UploadContext';

@@ -1,3 +1,5 @@
+'use client';
+
 import { Bell, X, Sun, Moon, LogOut, User } from 'lucide-react';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -5,19 +7,19 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 
 export function Header({ title }) {
   const { notifications, unreadCount, markAllAsRead } = useNotifications();
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    router.push('/login');
   };
 
   return (
@@ -89,7 +91,7 @@ export function Header({ title }) {
                             {n.severity.toUpperCase()}
                           </span>
                           <span className="text-[10px] text-muted-foreground">
-                            {n.timestamp.toLocaleTimeString()}
+                            {n.timestamp ? new Date(n.timestamp).toLocaleTimeString() : ''}
                           </span>
                         </div>
                         <h5 className="text-sm font-medium text-foreground mb-0.5">{n.title}</h5>

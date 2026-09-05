@@ -1,4 +1,7 @@
-import { Link, useLocation } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { LayoutDashboard, AlertOctagon, Upload, Settings, User, BarChart, LogOut, Shield, Radio, Menu, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/utils';
@@ -15,7 +18,7 @@ const navItems = [
 ];
 
 export function Sidebar() {
-  const location = useLocation();
+  const pathname = usePathname();
   const { logout, user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -23,7 +26,7 @@ export function Sidebar() {
   // Close mobile sidebar on route change
   useEffect(() => {
     setMobileOpen(false);
-  }, [location.pathname]);
+  }, [pathname]);
 
   // Close on escape key
   useEffect(() => {
@@ -34,7 +37,7 @@ export function Sidebar() {
 
   const sidebarContent = (
     <>
-      <Link to="/" className="mb-10 w-full px-6 flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <Link href="/" className="mb-10 w-full px-6 flex items-center gap-3 hover:opacity-80 transition-opacity">
         <img src="/anomalyze-logo.svg" alt="Anomalyze Logo" className="h-8 w-8" />
         <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted-foreground tracking-tight">
           Anomalyze
@@ -43,13 +46,13 @@ export function Sidebar() {
 
       <nav className="w-full px-4 space-y-2 flex-1">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = pathname === item.path;
           const Icon = item.icon;
 
           return (
             <Link
               key={item.path}
-              to={item.path}
+              href={item.path}
               className="relative group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 hover:bg-muted/50"
             >
               {isActive && (
@@ -88,7 +91,7 @@ export function Sidebar() {
       {isAdmin && (
         <div className="w-full px-4 mb-2">
           <Link
-            to="/admin"
+            href="/admin/dashboard"
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 group"
           >
             <Shield className="h-5 w-5 transition-colors" />

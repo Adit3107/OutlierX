@@ -1,14 +1,15 @@
+'use client';
+
 import { Sidebar } from './Sidebar';
-import { Outlet } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { UploadProgressBar } from '../common/UploadProgressBar';
 
-export function AppLayout() {
+export function AppLayout({ children }) {
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       <Sidebar />
       <main className="px-4 pt-16 pb-8 md:pl-[280px] md:pr-8 md:pt-8 min-h-screen">
-        <Outlet />
+        {children}
       </main>
       <UploadProgressBar />
       <Toaster position="top-right" toastOptions={{

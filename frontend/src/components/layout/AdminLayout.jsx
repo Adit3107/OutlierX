@@ -1,4 +1,7 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Users, BrainCircuit, Terminal, ArrowLeft, Menu, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Toaster } from 'sonner';
@@ -12,18 +15,18 @@ const navItems = [
     { icon: Terminal, label: 'API Playground', path: '/admin/playground' },
 ];
 
-export function AdminLayout() {
-    const location = useLocation();
+export function AdminLayout({ children }) {
+    const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
 
     // Close on route change
     useEffect(() => {
         setMobileOpen(false);
-    }, [location.pathname]);
+    }, [pathname]);
 
     const sidebarContent = (
         <>
-            <Link to="/dashboard" className="mb-8 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors px-2">
+            <Link href="/dashboard" className="mb-8 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors px-2">
                 <ArrowLeft className="h-4 w-4" /> Back to App
             </Link>
 
@@ -36,12 +39,12 @@ export function AdminLayout() {
 
             <nav className="space-y-1">
                 {navItems.map((item) => {
-                    const isActive = location.pathname === item.path;
+                    const isActive = pathname === item.path;
                     const Icon = item.icon;
                     return (
                         <Link
                             key={item.path}
-                            to={item.path}
+                            href={item.path}
                             className={cn(
                                 "flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm font-medium",
                                 isActive
@@ -112,7 +115,7 @@ export function AdminLayout() {
             </AnimatePresence>
 
             <main className="flex-1 p-4 pt-16 md:p-8 md:pt-8 overflow-auto bg-zinc-950/50">
-                <Outlet />
+                {children}
             </main>
 
             <Toaster position="top-center" toastOptions={{

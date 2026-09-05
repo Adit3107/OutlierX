@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, useState, useRef, useCallback } from 'react';
 import { ingestionApi } from '../api-integration/ingestion';
 import { toast } from 'sonner';
@@ -85,39 +87,40 @@ export function UploadProvider({ children }) {
             } : null);
 
             if (status.failedRows > 0) {
-              // Automatically trigger the download
-              ingestionApi.downloadBatchErrors(jobId).then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `missing_values_rows_${jobId}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                window.URL.revokeObjectURL(url);
-              }).catch(err => console.error('Failed to auto-download missing values CSV', err));
+              if (typeof window !== 'undefined') {
+                ingestionApi.downloadBatchErrors(jobId).then(blob => {
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `missing_values_rows_${jobId}.csv`;
+                  document.body.appendChild(a);
+                  a.click();
+                  a.remove();
+                  window.URL.revokeObjectURL(url);
+                }).catch(err => console.error('Failed to auto-download missing values CSV', err));
+              }
 
               toast.error('Missing Data Detected', {
                 description: `${status.processedRows} rows processed successfully. ${status.failedRows} rows had missing data points and have been automatically downloaded to your device as a CSV. Please fill them and re-upload.`,
-                duration: 15000, // Stay longer
+                duration: 15000,
                 action: {
                   label: 'Download Again',
                   onClick: () => {
-                    ingestionApi.downloadBatchErrors(jobId).then(blob => {
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `missing_values_rows_${jobId}.csv`;
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
-                      window.URL.revokeObjectURL(url);
-                    }).catch(err => toast.error('Failed to download missing values CSV'));
+                    if (typeof window !== 'undefined') {
+                      ingestionApi.downloadBatchErrors(jobId).then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `missing_values_rows_${jobId}.csv`;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        window.URL.revokeObjectURL(url);
+                      }).catch(err => toast.error('Failed to download missing values CSV'));
+                    }
                   }
                 }
               });
-
-              // Do NOT auto-dismiss so the user can see the error state in the UI
             } else {
               if (status.status === 'COMPLETED') {
                 toast.success(isProfileHistory ? 'Profile Updated' : 'Analysis Complete', {
@@ -131,7 +134,6 @@ export function UploadProvider({ children }) {
                 });
               }
 
-              // Auto-dismiss after 5 seconds since there are no failed rows to fix
               autoDismissRef.current = setTimeout(() => {
                 setActiveJob(null);
               }, 5000);

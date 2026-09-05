@@ -1,13 +1,21 @@
 import axios from 'axios';
 
+// Helper to resolve env vars in both Next.js SSR and client
+const getEnv = (key, fallback) => {
+    if (typeof process !== 'undefined' && process.env && process.env[key]) {
+        return process.env[key];
+    }
+    return fallback;
+};
+
 // Base URLs for Microservices (from environment variables)
 const SERVICES = {
-    AUTH: import.meta.env.VITE_API_URL_AUTH || 'http://localhost:3002',
-    ANALYTICS: import.meta.env.VITE_API_URL_ANALYTICS || 'http://localhost:3003',
-    SUBSCRIPTION: import.meta.env.VITE_API_URL_SUBSCRIPTION || 'http://localhost:3004',
-    INGESTION: import.meta.env.VITE_API_URL_INGESTION || 'http://localhost:3000',
-    NOTIFICATION: import.meta.env.VITE_API_URL_NOTIFICATION || 'http://localhost:3001',
-    ML: import.meta.env.VITE_API_URL_ML || 'http://localhost:8000'
+    AUTH: getEnv('VITE_API_URL_AUTH', getEnv('NEXT_PUBLIC_API_URL_AUTH', 'http://localhost:3002')),
+    ANALYTICS: getEnv('VITE_API_URL_ANALYTICS', getEnv('NEXT_PUBLIC_API_URL_ANALYTICS', 'http://localhost:3003')),
+    SUBSCRIPTION: getEnv('VITE_API_URL_SUBSCRIPTION', getEnv('NEXT_PUBLIC_API_URL_SUBSCRIPTION', 'http://localhost:3004')),
+    INGESTION: getEnv('VITE_API_URL_INGESTION', getEnv('NEXT_PUBLIC_API_URL_INGESTION', 'http://localhost:3000')),
+    NOTIFICATION: getEnv('VITE_API_URL_NOTIFICATION', getEnv('NEXT_PUBLIC_API_URL_NOTIFICATION', 'http://localhost:3001')),
+    ML: getEnv('VITE_API_URL_ML', getEnv('NEXT_PUBLIC_API_URL_ML', 'http://localhost:8000'))
 };
 
 // Token Provider to get fresh tokens
@@ -29,6 +37,11 @@ const createClient = (baseURL) => {
     client.interceptors.request.use(async (config) => {
         if (tokenProvider) {
             const token = await tokenProvider();
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
+        } else if (typeof window !== 'undefined') {
+            const token = localStorage.getItem('token') || localStorage.getItem('anomalyze_token');
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
             }

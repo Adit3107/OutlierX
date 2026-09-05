@@ -1,3 +1,5 @@
+'use client';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { UploadCloud, File, CheckCircle, X, AlertTriangle, Download } from 'lucide-react';
 import { ingestionApi } from '../../api-integration/ingestion';
@@ -15,8 +17,6 @@ export function FileUpload({ uploadType = 'BATCH_CSV' }) {
 
   const isProfileHistory = uploadType === 'PROFILE_HISTORY';
 
-  // Determine if the dropzone should be shown
-  // Show dropzone when: no active job, or job is done (COMPLETED/FAILED), or job is in PROCESSING phase (user can upload another)
   const showDropzone = (!activeJob) ||
     (activeJob.jobStatus === 'COMPLETED' && (!activeJob.failedRows || activeJob.failedRows === 0)) ||
     (activeJob.jobStatus === 'FAILED' && (!activeJob.failedRows || activeJob.failedRows === 0)) ||
@@ -28,14 +28,16 @@ export function FileUpload({ uploadType = 'BATCH_CSV' }) {
   const handleDownloadErrors = async () => {
     try {
       const blob = await ingestionApi.downloadBatchErrors(activeJob.jobId);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `missing_values_rows_${activeJob.jobId}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
+      if (typeof window !== 'undefined') {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `missing_values_rows_${activeJob.jobId}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      }
     } catch (err) {
       toast.error('Failed to download missing values CSV');
     }
@@ -76,7 +78,6 @@ export function FileUpload({ uploadType = 'BATCH_CSV' }) {
     <div className="w-full max-w-2xl mx-auto">
       <AnimatePresence mode="wait">
         {isUploading ? (
-          /* Show inline upload progress while actively uploading */
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -108,14 +109,13 @@ export function FileUpload({ uploadType = 'BATCH_CSV' }) {
                 <motion.div
                   className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400"
                   initial={{ width: 0 }}
-                  animate={{ width: `${activeJob.uploadProgress}% ` }}
+                  animate={{ width: `${activeJob.uploadProgress}%` }}
                   transition={{ ease: "linear" }}
                 />
               </div>
             </div>
           </motion.div>
         ) : hasFailedRows ? (
-          /* Show Failure / Missing Values Block */
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -160,7 +160,6 @@ export function FileUpload({ uploadType = 'BATCH_CSV' }) {
             </p>
           </motion.div>
         ) : showDropzone ? (
-          /* Dropzone - shown when idle or during processing/after completion */
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}

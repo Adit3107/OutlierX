@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { authApi } from '../api-integration/auth';
 import { setTokenProvider } from '../api-integration/client';
@@ -7,7 +9,12 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [token, setToken] = useState(localStorage.getItem('anomalyze_token'));
+    const [token, setToken] = useState(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('anomalyze_token') || localStorage.getItem('token');
+        }
+        return null;
+    });
 
     useEffect(() => {
         if (token) {
@@ -35,7 +42,9 @@ export function AuthProvider({ children }) {
 
     const login = async (email, password) => {
         const data = await authApi.login(email, password);
-        localStorage.setItem('anomalyze_token', data.token);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('anomalyze_token', data.token);
+        }
         setToken(data.token);
         setUser(data.user);
         return data.user;
@@ -43,26 +52,32 @@ export function AuthProvider({ children }) {
 
     const register = async (email, password, name, phone) => {
         const data = await authApi.register(email, password, name, phone);
-        // Note: data will not contain a token yet. Returns { message, isVerified }
         return data;
     };
 
     const verifyRegistration = async (email, otp) => {
         const data = await authApi.verifyRegistration(email, otp);
-        localStorage.setItem('anomalyze_token', data.token);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('anomalyze_token', data.token);
+        }
         setToken(data.token);
         setUser(data.user);
         return data.user;
     };
 
     const loginWithToken = (newToken) => {
-        localStorage.setItem('anomalyze_token', newToken);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('anomalyze_token', newToken);
+        }
         setLoading(true);
         setToken(newToken);
     };
 
     const logout = () => {
-        localStorage.removeItem('anomalyze_token');
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('anomalyze_token');
+            localStorage.removeItem('token');
+        }
         setToken(null);
         setUser(null);
         setTokenProvider(async () => null);

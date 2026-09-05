@@ -1,3 +1,5 @@
+'use client';
+
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { analyticsApi } from '../../api-integration/analytics';
 import { AlertTriangle, Search, Filter, ChevronLeft, ChevronRight, CheckCircle, XCircle } from 'lucide-react';

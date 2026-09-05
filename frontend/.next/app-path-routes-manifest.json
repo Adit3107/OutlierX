@@ -1,0 +1,16 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/auth/callback/page": "/auth/callback",
+  "/login/page": "/login",
+  "/page": "/",
+  "/(admin)/admin/dashboard/page": "/admin/dashboard",
+  "/(admin)/admin/playground/page": "/admin/playground",
+  "/(admin)/admin/models/page": "/admin/models",
+  "/(dashboard)/analysis/page": "/analysis",
+  "/(admin)/admin/users/page": "/admin/users",
+  "/(dashboard)/live/page": "/live",
+  "/(dashboard)/anomalies/page": "/anomalies",
+  "/(dashboard)/dashboard/page": "/dashboard",
+  "/(dashboard)/upload/page": "/upload",
+  "/(dashboard)/settings/page": "/settings"
+}

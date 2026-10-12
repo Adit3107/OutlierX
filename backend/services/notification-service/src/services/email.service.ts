@@ -1,4 +1,4 @@
-// src/services/email.service.ts
+﻿// src/services/email.service.ts
 import nodemailer, { Transporter } from 'nodemailer';
 
 interface EmailAttachment {
@@ -48,7 +48,7 @@ export const sendEmailNotification = async ({ to, subject, body, html, attachmen
   }
 
   try {
-    const fromAddress = process.env.EMAIL_FROM || 'no-reply@anomalyze.com';
+    const fromAddress = process.env.EMAIL_FROM || 'no-reply@outlierx.com';
 
     const mailOptions: any = {
       from: fromAddress,

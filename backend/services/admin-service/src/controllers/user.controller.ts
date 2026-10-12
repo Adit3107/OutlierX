@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { prisma } from '@anomalyze/database';
+﻿import { Request, Response } from 'express';
+import { prisma } from '@outlierx/database';
 
 export const listUsers = async (req: Request, res: Response) => {
     try {

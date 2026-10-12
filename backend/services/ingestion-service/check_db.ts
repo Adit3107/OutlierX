@@ -1,5 +1,5 @@
-
-import { PrismaClient } from '@anomalyze/database';
+﻿
+import { PrismaClient } from '@outlierx/database';
 
 const prisma = new PrismaClient();
 

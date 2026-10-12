@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
 // Extend Express Request
@@ -17,7 +17,7 @@ declare global {
     }
 }
 
-import { prisma } from '@anomalyze/database';
+import { prisma } from '@outlierx/database';
 import crypto from 'crypto';
 
 export const requireAuth = async (req: Request, res: Response, next: NextFunction) => {

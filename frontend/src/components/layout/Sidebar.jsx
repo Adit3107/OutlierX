@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -38,9 +38,9 @@ export function Sidebar() {
   const sidebarContent = (
     <>
       <Link href="/" className="mb-10 w-full px-6 flex items-center gap-3 hover:opacity-80 transition-opacity">
-        <img src="/anomalyze-logo.svg" alt="Anomalyze Logo" className="h-8 w-8" />
+        <img src="/outlierx-logo.svg" alt="OutlierX Logo" className="h-8 w-8" />
         <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted-foreground tracking-tight">
-          Anomalyze
+          OutlierX
         </h1>
       </Link>
 

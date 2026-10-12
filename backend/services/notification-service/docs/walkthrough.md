@@ -1,4 +1,4 @@
-# Notification Service Verification Report
+﻿# Notification Service Verification Report
 
 I have successfully verified that the Notification Service meets all objectives and is compliant with the specifications.
 
@@ -46,7 +46,7 @@ I simulated the full pipeline: `Producer Script` → `Kafka` → `Notification S
 ✅ Redis connected for deduplication
 
 // 3. Email Delivery
-📧 Email sent: MessageId=<f4edd710...@anomalyze.com>, To=test@example.com
+📧 Email sent: MessageId=<f4edd710...@outlierx.com>, To=test@example.com
 
 // 4. Audit Log
 📤 Alert event produced for user: user_test_e2e

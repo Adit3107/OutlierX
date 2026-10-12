@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+﻿import { useState, useRef, useCallback, useEffect } from 'react';
 import { ConnectionPanel } from './components/ConnectionPanel.jsx';
 import { GeneratorControls } from './components/GeneratorControls.jsx';
 import { TimingControls } from './components/TimingControls.jsx';
@@ -231,7 +231,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `anomalyze-sim-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
+    a.download = `outlierx-sim-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }, [logs]);
@@ -246,7 +246,7 @@ export default function App() {
       <header className="app-header">
         <h1>
           <span className="icon">⚡</span>
-          Anomalyze Simulator
+          OutlierX Simulator
         </h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {status === 'running' && <span className="header-badge" style={{ background: 'var(--success-bg)', color: 'var(--success)', borderColor: 'rgba(16,185,129,0.3)' }}>● RUNNING</span>}

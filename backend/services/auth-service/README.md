@@ -1,7 +1,7 @@
-# Auth Service (`auth-service`)
+﻿# Auth Service (`auth-service`)
 
 ## 📖 Overview
-The **Auth Service** manages user identity and security for the Anomalyze platform. It leverages **Clerk** for robust authentication (Sign Up, Sign In, MFA) and synchronizes user data to our local PostgreSQL database.
+The **Auth Service** manages user identity and security for the OutlierX platform. It leverages **Clerk** for robust authentication (Sign Up, Sign In, MFA) and synchronizes user data to our local PostgreSQL database.
 
 It supports:
 1.  **Identity Management**: Wrapper around Clerk SDK.
@@ -43,7 +43,7 @@ auth-service/
 
 ## 🚀 Quick Start (Running with Full Stack)
 
-> **Tip:** You can run the entire Anomalyze stack using the master docker-compose in the `backend/` directory:
+> **Tip:** You can run the entire OutlierX stack using the master docker-compose in the `backend/` directory:
 > ```bash
 > cd ../..
 > docker compose up -d
@@ -61,7 +61,7 @@ auth-service/
 2.  **Configure `.env`**:
     Copy `.env.example` to `.env` and add your **Clerk Keys** and **Database URL**:
     ```bash
-    DATABASE_URL="postgresql://user:password@localhost:5432/anomalyze"
+    DATABASE_URL="postgresql://user:password@localhost:5432/OutlierX"
     ```
 
 3.  **Start Service**:

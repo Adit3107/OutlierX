@@ -1,19 +1,19 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: anomalyze-frontend
+    container_name: outlierx-frontend
     restart: always
     ports:
       - "8080:80"
     environment:
       - NODE_ENV=production
     networks:
-      - anomalyze-net
+      - outlierx-net
 
 networks:
-  anomalyze-net:
+  outlierx-net:
     driver: bridge

@@ -1,8 +1,8 @@
-# Anomalyze – End-to-End System Documentation
+﻿# OutlierX – End-to-End System Documentation
 
 ## Overview
 
-Anomalyze is a production-grade anomaly detection platform designed to handle **both batch and real-time transactional data** using a **hybrid Rules + Machine Learning approach**. The system is built on a **fully Event-Driven Architecture (EDA)** to ensure scalability, fault tolerance, and clean separation of concerns.
+OutlierX is a production-grade anomaly detection platform designed to handle **both batch and real-time transactional data** using a **hybrid Rules + Machine Learning approach**. The system is built on a **fully Event-Driven Architecture (EDA)** to ensure scalability, fault tolerance, and clean separation of concerns.
 
 This document describes the **complete system architecture, data flow, storage model, detection logic, and cloud stack**, exactly as designed in the project specification.
 
@@ -224,5 +224,5 @@ ORDER BY timestamp DESC;
 
 ---
 
-**Project Name:** Anomalyze  
+**Project Name:** OutlierX  
 **Author:** Aditya

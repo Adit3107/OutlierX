@@ -1,4 +1,4 @@
-// src/services/email-template.service.ts
+﻿// src/services/email-template.service.ts
 /**
  * Builds clean HTML emails and CSV attachments for batch anomaly notifications.
  */
@@ -114,7 +114,7 @@ export const buildBatchEmailHtml = (
     <!-- Footer -->
     <div style="padding: 16px 32px; background: #f9fafb; border-top: 1px solid #e5e7eb;">
       <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-        Anomalyze • Automated anomaly detection • <a href="#" style="color: #3b82f6;">View Dashboard</a>
+        OutlierX • Automated anomaly detection • <a href="#" style="color: #3b82f6;">View Dashboard</a>
       </p>
     </div>
   </div>
@@ -169,7 +169,7 @@ export const buildSingleAnomalyEmailHtml = (anomaly: AnomalyEventData): string =
       </div>
     </div>
     <div style="padding: 12px 24px; background: #f9fafb; border-top: 1px solid #e5e7eb;">
-      <p style="margin: 0; font-size: 12px; color: #9ca3af;">Anomalyze • Automated anomaly detection</p>
+      <p style="margin: 0; font-size: 12px; color: #9ca3af;">OutlierX • Automated anomaly detection</p>
     </div>
   </div>
 </body>

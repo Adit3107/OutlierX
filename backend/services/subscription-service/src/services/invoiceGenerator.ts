@@ -1,4 +1,4 @@
-import PDFDocument from 'pdfkit';
+﻿import PDFDocument from 'pdfkit';
 
 interface InvoiceData {
   paymentId: string;
@@ -28,7 +28,7 @@ function generateHeader(doc: PDFKit.PDFDocument) {
     //.image('src/config/logo.png', 50, 45, { width: 50 }) // Logo requires a valid image file
     .fillColor('#444444')
     .fontSize(20)
-    .text('Anomalyze Inc.', 110, 57)
+    .text('OutlierX Inc.', 110, 57)
     .fontSize(10)
     .text('123 Tech Street', 200, 50, { align: 'right' })
     .text('Bangalore, India', 200, 65, { align: 'right' })
@@ -78,7 +78,7 @@ function generateInvoiceTable(doc: PDFKit.PDFDocument, invoiceData: InvoiceData)
     doc,
     position,
     'Subscription Plan',
-    'Anomalyze Pro Svc',
+    'OutlierX Pro Svc',
     String(invoiceData.amount),
     '1',
     String(invoiceData.amount)

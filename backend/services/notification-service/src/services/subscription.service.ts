@@ -1,4 +1,4 @@
-import { prisma, SubscriptionPlan, Severity } from '@anomalyze/database';
+﻿import { prisma, SubscriptionPlan, Severity } from '@outlierx/database';
 
 
 // Defined in schema.prisma:

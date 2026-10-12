@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { adminApi } from '../../../../api-integration/admin';
@@ -70,7 +70,7 @@ export default function AdminUsersPage() {
             const result = await authApi.impersonateUser(userId);
             toast.success(`Impersonating ${userEmail}`);
             if (typeof window !== 'undefined') {
-                localStorage.setItem('anomalyze_token', result.token);
+                localStorage.setItem('outlierx_token', result.token);
                 window.location.href = '/dashboard';
             }
         } catch (error) {

@@ -1,10 +1,10 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import axios from 'axios';
-import { prisma } from '@anomalyze/database';
+import { prisma } from '@outlierx/database';
 import otpGenerator from 'otp-generator';
 import { sendOTPEmail } from '../utils/email';
 

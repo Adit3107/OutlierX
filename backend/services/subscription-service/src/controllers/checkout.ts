@@ -1,6 +1,6 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import razorpayService from '../services/razorpay';
-import { prisma, SubscriptionPlan, SubscriptionStatus, InvoiceStatus } from '@anomalyze/database';
+import { prisma, SubscriptionPlan, SubscriptionStatus, InvoiceStatus } from '@outlierx/database';
 import crypto from 'crypto';
 
 export const createOrder = async (req: Request, res: Response) => {

@@ -1,11 +1,11 @@
-import '../index.css';
+﻿import '../index.css';
 import { Providers } from './providers';
 
 export const metadata = {
-  title: 'Anomalyze – Event-Driven Fraud & Anomaly Detection',
+  title: 'OutlierX – Event-Driven Fraud & Anomaly Detection',
   description: 'Production-grade real-time transaction monitoring and anomaly detection platform.',
   icons: {
-    icon: '/anomalyze-logo.svg',
+    icon: '/outlierx-logo.svg',
   },
 };
 

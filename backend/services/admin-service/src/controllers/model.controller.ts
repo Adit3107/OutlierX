@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { prisma } from '@anomalyze/database';
+﻿import { Request, Response } from 'express';
+import { prisma } from '@outlierx/database';
 import { sendKafkaMessage } from '../kafka/producer';
 import axios from 'axios';
 

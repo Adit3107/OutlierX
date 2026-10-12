@@ -1,11 +1,11 @@
-import { Router, Request, Response } from 'express';
+﻿import { Router, Request, Response } from 'express';
 import { sendEmailNotification } from '../services/email.service';
 import { sendSmsNotification } from '../services/sms.service';
 import { sendWebhookNotification } from '../services/webhook.service';
 import { makeCallNotification } from '../services/call.service';
 import { requireAuth } from '../middleware/auth.middleware';
 import { getUserContext } from '../services/subscription.service';
-import { prisma, Severity } from '@anomalyze/database';
+import { prisma, Severity } from '@outlierx/database';
 
 const router = Router();
 

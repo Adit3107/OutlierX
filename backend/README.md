@@ -1,6 +1,6 @@
-# Anomalyze Backend
+﻿# OutlierX Backend
 
-This directory contains the central infrastructure and microservices for the Anomalyze platform.
+This directory contains the central infrastructure and microservices for the OutlierX platform.
 
 ## 🏗 Architecture
 

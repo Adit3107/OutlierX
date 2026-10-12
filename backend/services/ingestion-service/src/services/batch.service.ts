@@ -1,4 +1,4 @@
-import { Queue, Worker, Job } from 'bullmq';
+﻿import { Queue, Worker, Job } from 'bullmq';
 import { config } from '../config';
 import fs from 'fs';
 import csv from 'csv-parser';
@@ -6,7 +6,7 @@ import { TransactionSchema, Transaction } from '../api/validators';
 import { kafkaProducer } from '../kafka/producer';
 import { entitlementService } from './entitlement.service';
 import { EntitlementError } from './transaction.service';
-import { PrismaClient, TransactionSource, prisma } from '@anomalyze/database';
+import { PrismaClient, TransactionSource, prisma } from '@outlierx/database';
 import axios from 'axios';
 
 

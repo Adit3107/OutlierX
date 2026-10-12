@@ -1,7 +1,7 @@
-import { Transaction } from '../api/validators';
+﻿import { Transaction } from '../api/validators';
 import { kafkaProducer } from '../kafka/producer';
 import { entitlementService } from './entitlement.service';
-import { PrismaClient, TransactionSource, prisma } from '@anomalyze/database';
+import { PrismaClient, TransactionSource, prisma } from '@outlierx/database';
 
 // Use shared Prisma client from backend
 

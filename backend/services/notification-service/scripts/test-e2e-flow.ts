@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ============================================================
  * End-to-End Flow Test - Notification Service
  * ============================================================
@@ -18,7 +18,7 @@
  * Option A: Docker Setup (Recommended)
  * ------------------------------------------------------------
  * # 1. Start all infrastructure:
- * cd /path/to/Anomalyze/backend
+ * cd /path/to/OutlierX/backend
  * docker compose up -d redis redpanda postgres
  * 
  * # 2. Setup database:
@@ -63,7 +63,7 @@
  */
 
 import { Kafka } from 'kafkajs';
-import { PrismaClient } from '@anomalyze/database';
+import { PrismaClient } from '@outlierx/database';
 
 const prisma = new PrismaClient();
 

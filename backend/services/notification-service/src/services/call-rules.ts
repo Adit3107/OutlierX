@@ -1,4 +1,4 @@
-// src/services/call-rules.ts
+﻿// src/services/call-rules.ts
 /**
  * Call Warning Rule Engine
  *
@@ -133,11 +133,11 @@ export function evaluateCallRules(event: any): CallRuleResult {
     const rulesText = triggeredRules.join(', ').replace(/_/g, ' ').toLowerCase();
 
     const voiceMessage = [
-        `Hello. This is an urgent fraud alert from Anomalyze.`,
+        `Hello. This is an urgent fraud alert from OutlierX.`,
         `A ${severityWord} anomaly has been detected for ${endUserId}.`,
         ...reasons,
         `Rules triggered: ${rulesText}.`,
-        `Please log in to your Anomalyze dashboard immediately to review and take action.`,
+        `Please log in to your OutlierX dashboard immediately to review and take action.`,
         `If this transaction was not authorised, contact your bank now.`,
         `This message will now repeat.`,
         `A ${severityWord} anomaly has been detected for ${endUserId}.`,

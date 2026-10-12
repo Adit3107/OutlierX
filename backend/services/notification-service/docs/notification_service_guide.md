@@ -1,4 +1,4 @@
-# Notification Service - Complete Technical Deep Dive
+﻿# Notification Service - Complete Technical Deep Dive
 
 This document provides a **file-by-file, function-by-function** explanation of the Notification Service, including theoretical concepts and the complete logic flow.
 
@@ -23,7 +23,7 @@ This document provides a **file-by-file, function-by-function** explanation of t
 The Notification Service is a **Kafka Consumer** that listens for anomaly detection events and dispatches alerts to users through multiple channels (Email, SMS, Voice, Webhooks).
 
 ### Why is it a separate microservice?
-In the Event-Driven Architecture (EDA) of Anomalyze:
+In the Event-Driven Architecture (EDA) of OutlierX:
 - **Separation of Concerns**: The ML service detects anomalies; this service handles delivery.
 - **Scalability**: Notification delivery can be scaled independently.
 - **Fault Isolation**: If notification fails, it doesn't affect detection.
@@ -401,7 +401,7 @@ Produces a test anomaly event to Kafka for end-to-end testing.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        ANOMALYZE SYSTEM                             │
+│                        OutlierX SYSTEM                             │
 └─────────────────────────────────────────────────────────────────────┘
 
 1. ML Service detects anomaly

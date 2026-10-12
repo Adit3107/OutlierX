@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
@@ -136,9 +136,9 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <img src="/anomalyze-logo.svg" alt="Anomalyze Logo" className="h-8 w-8" />
+              <img src="/outlierx-logo.svg" alt="OutlierX Logo" className="h-8 w-8" />
               <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-cyan-500">
-                Anomalyze
+                OutlierX
               </span>
             </div>
             {/* Desktop Nav */}
@@ -292,7 +292,7 @@ export default function HomePage() {
                 onClick={handleTryNow}
                 className="group px-8 py-4 rounded-full bg-primary text-primary-foreground text-lg font-medium hover:bg-primary/90 transition-all shadow-xl shadow-primary/25 flex items-center gap-2"
               >
-                Try Anomalyze Now
+                Try OutlierX Now
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               <a
@@ -322,7 +322,7 @@ export default function HomePage() {
       <section id="features" className="py-24 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">Why choose Anomalyze?</h2>
+            <h2 className="text-3xl font-bold mb-4">Why choose OutlierX?</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Built for developers and data scientists who need reliable, real-time insights without the complexity.
             </p>
@@ -362,7 +362,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="py-12 border-t border-border/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-muted-foreground text-sm">
-          <p>&copy; {new Date().getFullYear()} Anomalyze. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} OutlierX. All rights reserved.</p>
         </div>
       </footer>
     </div>

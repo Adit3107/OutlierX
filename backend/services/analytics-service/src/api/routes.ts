@@ -1,5 +1,5 @@
-import { Router, Request, Response } from 'express';
-import { prisma } from '@anomalyze/database';
+﻿import { Router, Request, Response } from 'express';
+import { prisma } from '@outlierx/database';
 
 interface AuthenticatedRequest extends Request {
     auth?: {

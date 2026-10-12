@@ -1,4 +1,4 @@
-name: Deploy Frontend
+﻿name: Deploy Frontend
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/Anomalyze/frontend
+            cd ~/OutlierX/frontend
 
             # Pull latest code
             git pull origin main
@@ -28,12 +28,12 @@ jobs:
             npm install
 
             VITE_CLERK_PUBLISHABLE_KEY=pk_test_c2FjcmVkLXN1bmZpc2gtMTQuY2xlcmsuYWNjb3VudHMuZGV2JA \
-            VITE_API_URL_AUTH=https://backend.anomalyze.me \
-            VITE_API_URL_ANALYTICS=https://backend.anomalyze.me \
-            VITE_API_URL_INGESTION=https://backend.anomalyze.me \
-            VITE_API_URL_NOTIFICATION=https://backend.anomalyze.me \
-            VITE_API_URL_SUBSCRIPTION=https://backend.anomalyze.me \
-            VITE_API_URL_ML=https://backend.anomalyze.me \
+            VITE_API_URL_AUTH=https://backend.OutlierX.me \
+            VITE_API_URL_ANALYTICS=https://backend.OutlierX.me \
+            VITE_API_URL_INGESTION=https://backend.OutlierX.me \
+            VITE_API_URL_NOTIFICATION=https://backend.OutlierX.me \
+            VITE_API_URL_SUBSCRIPTION=https://backend.OutlierX.me \
+            VITE_API_URL_ML=https://backend.OutlierX.me \
             npm run build
 
             # Restart Nginx to serve new build

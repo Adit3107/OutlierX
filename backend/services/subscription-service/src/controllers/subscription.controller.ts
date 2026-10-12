@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { prisma, SubscriptionPlan, SubscriptionStatus } from '@anomalyze/database';
+﻿import { Request, Response } from 'express';
+import { prisma, SubscriptionPlan, SubscriptionStatus } from '@outlierx/database';
 
 // Plan definitions with features
 const PLANS = [

@@ -1,4 +1,4 @@
-# Anomalyze
+﻿# OutlierX
 
 ## Getting Started
 

@@ -1,7 +1,7 @@
-{
-    "name": "@anomalyze/database",
+﻿{
+    "name": "@outlierx/database",
     "version": "1.0.0",
-    "description": "Shared Prisma DB client for Anomalyze",
+    "description": "Shared Prisma DB client for OutlierX",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "files": [

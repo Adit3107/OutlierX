@@ -1,6 +1,6 @@
-import { Kafka, EachMessagePayload, CompressionTypes, CompressionCodecs } from 'kafkajs';
+﻿import { Kafka, EachMessagePayload, CompressionTypes, CompressionCodecs } from 'kafkajs';
 import { SnappyCodec } from 'kafkajs-snappy';
-import { prisma } from '@anomalyze/database';
+import { prisma } from '@outlierx/database';
 import { sseManager } from '../services/sse.service';
 
 // Register Snappy codec

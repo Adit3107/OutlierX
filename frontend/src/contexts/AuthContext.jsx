@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { authApi } from '../api-integration/auth';
@@ -11,7 +11,7 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [token, setToken] = useState(() => {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('anomalyze_token') || localStorage.getItem('token');
+            return localStorage.getItem('outlierx_token') || localStorage.getItem('token');
         }
         return null;
     });
@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
     const login = async (email, password) => {
         const data = await authApi.login(email, password);
         if (typeof window !== 'undefined') {
-            localStorage.setItem('anomalyze_token', data.token);
+            localStorage.setItem('outlierx_token', data.token);
         }
         setToken(data.token);
         setUser(data.user);
@@ -58,7 +58,7 @@ export function AuthProvider({ children }) {
     const verifyRegistration = async (email, otp) => {
         const data = await authApi.verifyRegistration(email, otp);
         if (typeof window !== 'undefined') {
-            localStorage.setItem('anomalyze_token', data.token);
+            localStorage.setItem('outlierx_token', data.token);
         }
         setToken(data.token);
         setUser(data.user);
@@ -67,7 +67,7 @@ export function AuthProvider({ children }) {
 
     const loginWithToken = (newToken) => {
         if (typeof window !== 'undefined') {
-            localStorage.setItem('anomalyze_token', newToken);
+            localStorage.setItem('outlierx_token', newToken);
         }
         setLoading(true);
         setToken(newToken);
@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
 
     const logout = () => {
         if (typeof window !== 'undefined') {
-            localStorage.removeItem('anomalyze_token');
+            localStorage.removeItem('outlierx_token');
             localStorage.removeItem('token');
         }
         setToken(null);

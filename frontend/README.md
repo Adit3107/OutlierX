@@ -1,8 +1,8 @@
-# Anomalyze Frontend
+﻿# OutlierX Frontend
 
-![Anomalyze Dashboard](https://placehold.co/1200x600?text=Anomalyze+Dashboard+Preview)
+![OutlierX Dashboard](https://placehold.co/1200x600?text=OutlierX+Dashboard+Preview)
 
-**Anomalyze** is a premium, high-performance dashboard for visualizing real-time anomaly detection in financial transactions. Built with a focus on aesthetics, glassmorphism, and smooth animations.
+**OutlierX** is a premium, high-performance dashboard for visualizing real-time anomaly detection in financial transactions. Built with a focus on aesthetics, glassmorphism, and smooth animations.
 
 ## 🚀 Features
 
@@ -31,8 +31,8 @@
 
 ### 1. Clone & Install
 ```bash
-git clone https://github.com/omkardj2/Anomalyze.git
-cd Anomalyze/frontend
+git clone https://github.com/omkardj2/OutlierX.git
+cd OutlierX/frontend
 
 npm install
 ```
@@ -61,10 +61,10 @@ Access the app at `http://localhost:8080`.
 ### Manual Build
 ```bash
 # Build the image
-docker build -t anomalyze-frontend .
+docker build -t outlierx-frontend .
 
 # Run the container
-docker run -p 8080:80 anomalyze-frontend
+docker run -p 8080:80 outlierx-frontend
 ```
 
 ## 📂 Project Structure
@@ -86,4 +86,4 @@ frontend/
 
 ---
 
-Built with ❤️ by Anomalyze.
+Built with ❤️ by OutlierX.

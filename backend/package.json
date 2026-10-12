@@ -1,5 +1,5 @@
-{
-  "name": "anomalyze-backend",
+﻿{
+  "name": "OutlierX-backend",
   "private": true,
   "workspaces": [
     "packages/*",

@@ -1,7 +1,7 @@
-
+﻿
 import IORedis from 'ioredis';
 import { config } from '../config';
-import { prisma } from '@anomalyze/database';
+import { prisma } from '@outlierx/database';
 
 export class EntitlementService {
     private redis: IORedis;

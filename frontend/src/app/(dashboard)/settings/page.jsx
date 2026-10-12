@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Header } from '../../../components/layout/Header';
 import { useRouter } from 'next/navigation';
@@ -73,7 +73,7 @@ export default function SettingsPage() {
         key: data.key,
         amount: data.amount,
         currency: data.currency,
-        name: 'Anomalyze',
+        name: 'OutlierX',
         description: `Upgrade to ${planId} Plan`,
         order_id: data.orderId,
         handler: async function (response) {

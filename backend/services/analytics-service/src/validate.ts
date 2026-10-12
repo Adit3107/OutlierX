@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Pre-Start Validation Script
  * 
  * Validates environment and connectivity before starting the service.
@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import Redis from 'ioredis';
 import { Kafka } from 'kafkajs';
-import { PrismaClient, prisma } from '@anomalyze/database';
+import { PrismaClient, prisma } from '@outlierx/database';
 
 // Environment schema
 const envSchema = z.object({

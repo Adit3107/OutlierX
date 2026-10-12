@@ -1,4 +1,4 @@
-
+﻿
 import dotenv from 'dotenv';
 import { sendEmailNotification } from '../src/services/email.service';
 
@@ -13,7 +13,7 @@ async function main() {
   try {
     await sendEmailNotification({
       to: testEmail,
-      subject: 'Anomalyze SMTP Test',
+      subject: 'OutlierX SMTP Test',
       body: 'If you are receiving this, your SMTP credentials are correctly configured!'
     });
     console.log('✅ Test email sent successfully!');

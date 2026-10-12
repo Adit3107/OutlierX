@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { Header } from '../../../components/layout/Header';
@@ -131,7 +131,7 @@ export default function LiveFeedPage() {
           </div>
 
           <p className="text-gray-400 text-lg mb-8 leading-relaxed">
-            Upgrade to <span className="text-indigo-400 font-semibold">Anomalyze Pro</span> to unlock real-time anomaly detection, live transaction streaming, and millisecond-latency alerts.
+            Upgrade to <span className="text-indigo-400 font-semibold">OutlierX Pro</span> to unlock real-time anomaly detection, live transaction streaming, and millisecond-latency alerts.
           </p>
 
           <div className="grid grid-cols-2 gap-4 mb-8">

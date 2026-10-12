@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 
 const getEnv = (key, fallback) => {
     if (typeof process !== 'undefined' && process.env && process.env[key]) {
@@ -19,7 +19,7 @@ const adminClient = axios.create({
 // Add auth interceptor
 adminClient.interceptors.request.use(async (config) => {
     if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('anomalyze_token') || localStorage.getItem('token');
+        const token = localStorage.getItem('outlierx_token') || localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }

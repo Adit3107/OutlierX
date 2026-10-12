@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -80,7 +80,7 @@ function LoginForm() {
         <div className="min-h-screen flex items-center justify-center bg-gray-900 text-white px-4">
             <div className="max-w-md w-full space-y-8 bg-gray-800 p-8 rounded-xl shadow-2xl border border-gray-700">
                 <div className="text-center">
-                    <h2 className="text-3xl font-extrabold text-blue-400">Anomalyze</h2>
+                    <h2 className="text-3xl font-extrabold text-blue-400">OutlierX</h2>
                     <p className="mt-2 text-gray-400">
                         {view === 'login' && 'Sign in to access your dashboard'}
                         {view === 'register' && 'Create an account to get started'}

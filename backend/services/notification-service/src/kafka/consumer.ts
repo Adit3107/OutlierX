@@ -1,4 +1,4 @@
-// src/kafka/consumer.ts
+﻿// src/kafka/consumer.ts
 import { Kafka, EachMessagePayload } from 'kafkajs';
 
 import { sendEmailNotification } from '../services/email.service';
@@ -23,7 +23,7 @@ import {
   startKafkaProducer,
   produceAlertEvent,
 } from './producer';
-import { prisma, Severity } from '@anomalyze/database';
+import { prisma, Severity } from '@outlierx/database';
 
 
 const KAFKA_BROKERS =
@@ -328,7 +328,7 @@ async function handleNonEmailChannels(event: any, userId: string, severity: stri
       await retry(() =>
         sendSmsNotification({
           to: phoneTo,
-          message: `🚨 ${severity} anomaly: $${event.data?.amount || 0} transaction flagged. Check Anomalyze dashboard.`,
+          message: `🚨 ${severity} anomaly: $${event.data?.amount || 0} transaction flagged. Check OutlierX dashboard.`,
         })
       );
       await prisma.notificationLog.create({

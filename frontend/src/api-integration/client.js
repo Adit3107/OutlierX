@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 
 // Helper to resolve env vars in both Next.js SSR and client
 const getEnv = (key, fallback) => {
@@ -41,7 +41,7 @@ const createClient = (baseURL) => {
                 config.headers.Authorization = `Bearer ${token}`;
             }
         } else if (typeof window !== 'undefined') {
-            const token = localStorage.getItem('token') || localStorage.getItem('anomalyze_token');
+            const token = localStorage.getItem('token') || localStorage.getItem('outlierx_token');
             if (token) {
                 config.headers.Authorization = `Bearer ${token}`;
             }

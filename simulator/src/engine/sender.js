@@ -1,7 +1,7 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 
 /**
- * Send a transaction to Anomalyze's ingestion endpoint.
+ * Send a transaction to OutlierX's ingestion endpoint.
  * Returns { success, responseTime, status, error }
  */
 export async function sendTransaction(tx, apiUrl, jwtToken) {

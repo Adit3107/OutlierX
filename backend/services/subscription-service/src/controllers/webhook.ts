@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { prisma, SubscriptionStatus, InvoiceStatus } from '@anomalyze/database';
+﻿import { Request, Response } from 'express';
+import { prisma, SubscriptionStatus, InvoiceStatus } from '@outlierx/database';
 
 export const handleRazorpayWebhook = async (req: Request, res: Response) => {
   try {

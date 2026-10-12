@@ -1,5 +1,5 @@
-
-import { PrismaClient, SubscriptionPlan, Severity } from '@anomalyze/database';
+﻿
+import { PrismaClient, SubscriptionPlan, Severity } from '@outlierx/database';
 import { getUserContext, canSendNotification } from '../src/services/subscription.service';
 
 const prisma = new PrismaClient();

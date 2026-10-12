@@ -1,4 +1,4 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
   # ==============================================
@@ -28,7 +28,7 @@ services:
     volumes:
       - redpanda_data:/var/lib/redpanda/data
     networks:
-      - anomalyze-net
+      - outlierx-net
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8082/topics" ]
       interval: 10s
@@ -58,7 +58,7 @@ services:
       redpanda:
         condition: service_healthy
     networks:
-      - anomalyze-net
+      - outlierx-net
 
   # Redis (Cache & Queue)
   redis:
@@ -69,7 +69,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - anomalyze-net
+      - outlierx-net
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -83,15 +83,15 @@ services:
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: anomalyze
+      POSTGRES_DB: OutlierX
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - anomalyze-net
+      - outlierx-net
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U user -d anomalyze" ]
+      test: [ "CMD-SHELL", "pg_isready -U user -d OutlierX" ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -124,7 +124,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - anomalyze-net
+      - outlierx-net
     volumes:
       - ./services/ml-service/models:/app/models
       - ./services/ml-service/data:/app/data
@@ -153,7 +153,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - anomalyze-net
+      - outlierx-net
 
   # 3. Notification Service (Node.js)
   notification-service:
@@ -176,7 +176,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - anomalyze-net
+      - outlierx-net
 
   # 4. Auth Service (Node.js)
   auth-service:
@@ -197,7 +197,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - anomalyze-net
+      - outlierx-net
 
   # 5. Analytics Service (Node.js)
   analytics-service:
@@ -220,7 +220,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - anomalyze-net
+      - outlierx-net
 
   # 6. Subscription Service (Node.js)
   subscription-service:
@@ -241,7 +241,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - anomalyze-net
+      - outlierx-net
 
   # 7. Admin Service (Node.js)
   admin-service:
@@ -264,7 +264,7 @@ services:
       redpanda:
         condition: service_healthy
     networks:
-      - anomalyze-net
+      - outlierx-net
 
 volumes:
   redpanda_data:
@@ -273,5 +273,5 @@ volumes:
 
 
 networks:
-  anomalyze-net:
+  outlierx-net:
     driver: bridge

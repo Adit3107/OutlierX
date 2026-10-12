@@ -1,4 +1,4 @@
-{
+﻿{
     "name": "subscription-service",
     "version": "1.0.0",
     "description": "Subscription and billing service using Razorpay",
@@ -22,7 +22,7 @@
         "jsonwebtoken": "^9.0.3",
         "svix": "^1.15.0",
         "@clerk/clerk-sdk-node": "^4.12.21",
-        "@anomalyze/database": "*"
+        "@outlierx/database": "*"
     },
     "devDependencies": {
         "@types/cors": "^2.8.17",

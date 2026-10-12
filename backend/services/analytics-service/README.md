@@ -1,7 +1,7 @@
-# Analytics Service (`analytics-service`)
+﻿# Analytics Service (`analytics-service`)
 
 ## 📖 Overview
-The **Analytics Service** is the central dashboard API for the Anomalyze platform. It aggregates data from the `transactions` and `anomalies` database tables to provide real-time insights to the frontend.
+The **Analytics Service** is the central dashboard API for the OutlierX platform. It aggregates data from the `transactions` and `anomalies` database tables to provide real-time insights to the frontend.
 
 It serves as the user's primary interface for visualizing:
 1.  **Dashboard Stats**: Total transactions, anomaly counts, and system status.

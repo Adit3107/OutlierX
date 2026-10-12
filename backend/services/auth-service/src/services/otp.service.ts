@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+﻿import Redis from 'ioredis';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -66,7 +66,7 @@ export class OtpService {
                 },
                 body: JSON.stringify({
                     to: email,
-                    subject: 'Your Anomalyze Verification Code',
+                    subject: 'Your OutlierX Verification Code',
                     body: `Your verification code is: ${otp}. It expires in 5 minutes.`
                 })
             });

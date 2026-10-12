@@ -1,4 +1,4 @@
-{
+﻿{
     "name": "admin-service",
     "version": "1.0.0",
     "description": "Admin service for system management and analytics",
@@ -10,7 +10,7 @@
         "lint": "eslint . --ext .ts"
     },
     "dependencies": {
-        "@anomalyze/database": "^1.0.0",
+        "@outlierx/database": "^1.0.0",
         "axios": "^1.6.2",
         "cors": "^2.8.5",
         "dotenv": "^16.3.1",

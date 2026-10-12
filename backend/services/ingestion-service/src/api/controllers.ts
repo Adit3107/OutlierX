@@ -1,10 +1,10 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response } from 'express';
 import crypto from 'crypto';
 
 import { TransactionSchema } from './validators';
 import { transactionService, EntitlementError } from '../services/transaction.service';
 import { batchService } from '../services/batch.service';
-import { prisma } from '@anomalyze/database';
+import { prisma } from '@outlierx/database';
 
 export const ingestTransaction = async (req: Request, res: Response) => {
     try {

@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+﻿import nodemailer from 'nodemailer';
 
 // Generate Ethereal test account on the fly or use a fixed one if provided in env
 let transporter: nodemailer.Transporter;
@@ -37,12 +37,12 @@ export const sendOTPEmail = async (to: string, otp: string, purpose: 'registrati
   const mailer = await initTransporter();
 
   const subject = purpose === 'registration'
-    ? 'Verify your Anomalyze Account'
-    : 'Reset your Anomalyze Password';
+    ? 'Verify your OutlierX Account'
+    : 'Reset your OutlierX Password';
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-w-lg mx-auto p-6 bg-gray-50 rounded-lg">
-      <h2 style="color: #4f46e5;">Anomalyze ${purpose === 'registration' ? 'Registration' : 'Password Reset'}</h2>
+      <h2 style="color: #4f46e5;">OutlierX ${purpose === 'registration' ? 'Registration' : 'Password Reset'}</h2>
       <p>Here is your One-Time Password (OTP) to ${purpose === 'registration' ? 'verify your email' : 'reset your password'}:</p>
       <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #111827; padding: 20px; background: #fff; border-radius: 8px; text-align: center; margin: 20px 0;">
         ${otp}
@@ -53,7 +53,7 @@ export const sendOTPEmail = async (to: string, otp: string, purpose: 'registrati
   `;
 
   const info = await mailer.sendMail({
-    from: '"Anomalyze Security" <security@anomalyze.io>',
+    from: '"OutlierX Security" <security@outlierx.io>',
     to,
     subject,
     html,

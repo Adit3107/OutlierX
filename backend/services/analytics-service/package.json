@@ -1,4 +1,4 @@
-{
+﻿{
     "name": "analytics-service",
     "version": "1.0.0",
     "description": "Dashboard analytics and aggregation service",
@@ -12,7 +12,7 @@
         "test": "jest"
     },
     "dependencies": {
-        "@anomalyze/database": "^1.0.0",
+        "@outlierx/database": "^1.0.0",
         "@clerk/clerk-sdk-node": "^4.13.23",
         "@types/jsonwebtoken": "^9.0.10",
         "cors": "^2.8.5",

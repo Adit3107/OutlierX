@@ -1,8 +1,8 @@
-import { v4 as uuidv4 } from 'uuid';
+﻿import { v4 as uuidv4 } from 'uuid';
 import { MERCHANTS } from '../data/merchants.js';
 
 /**
- * Generate a single transaction payload matching Anomalyze's ingestion schema.
+ * Generate a single transaction payload matching OutlierX's ingestion schema.
  */
 export function generateTransaction(config, endUserIds) {
   const {

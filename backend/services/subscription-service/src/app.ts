@@ -1,10 +1,10 @@
-import express, { Request, Response } from 'express';
+﻿import express, { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import router from './api/routes';
-import { prisma } from '@anomalyze/database';
+import { prisma } from '@outlierx/database';
 
 // 1. Load Environment Variables
 dotenv.config();
